@@ -1,2 +1,2 @@
-parvaos/target/
-parvaos/Cargo.lock
+target/
+Cargo.lock

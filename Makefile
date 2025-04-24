@@ -2,10 +2,10 @@
 .DEFAULT_GOAL := run
 
 run:
-	cd parvaos && cargo run
+	cargo run
 
 build:
-	cd parvaos && cargo build
+	cargo build
 
 clean:
-	cd parvaos && cargo clean
+	cargo clean
