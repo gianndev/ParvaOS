@@ -6,4 +6,10 @@ edition = "2024"
 readme = "README.md"
 license = "GPL-3.0-only"
 
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
 [dependencies]
