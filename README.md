@@ -10,6 +10,15 @@
 
 - x86 CPU support (64 bit)
 
+## TODO:
+- [ ] Hardware interrupts
+- [ ] VGA Text mode with customizable font and color palette
+- [ ] Serial output
+- [ ] Paging
+- [ ] Heap allocation
+- [ ] Add a basic file system
+- [ ] Implement a basic GUI
+
 ## How to compile ParvaOS' code?
 
 If you want to compile the whole project on your local machine, follow these instructions:
