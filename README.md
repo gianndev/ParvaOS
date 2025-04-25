@@ -36,6 +36,9 @@ If you want to compile the whole project on your local machine, follow these ins
     make run
     ```
 
+## Acknowledgments:
+* A special thanks to Phil-Opp's [blog](https://os.phil-opp.com/) 
+
 ## License
 
 This project is licensed under the terms of the GNU General Public License v3.0 only (GPL-3.0-only).  
