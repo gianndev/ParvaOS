@@ -12,4 +12,8 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
+[lib]
+test = false
+
 [dependencies]
+bootloader = "0.9"
