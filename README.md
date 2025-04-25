@@ -1,10 +1,13 @@
 # ParvaOS
 
-ParvaOS is an operating system written in Rust by Francesco Giannice
+![Main Image](doc/images/hello.png "Main Image") 
+*For now the kernel is only able to print an 'Hello World!' string*
 
-<!-- ## Features
+ParvaOS is an operating system written in Rust by Francesco Giannice.
 
-- [INSERT HERE] -->
+## Features
+
+- x86 CPU support (64 bit)
 
 ## How to compile ParvaOS' code?
 
@@ -21,10 +24,16 @@ If you want to compile the whole project on your local machine, follow these ins
     cd parvaos
     ```
 
-3. **Run ParvaOS:**
+3. **Build the ParvaOS kernel:**
 
     ```
-    cargo build --target thumbv7em-none-eabihf
+    make build
+    ```
+
+4. **Run the ParvaOS kernel:**
+
+    ```
+    make run
     ```
 
 ## License
