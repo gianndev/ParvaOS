@@ -1,9 +1,10 @@
 # ParvaOS
 
 ![Main Image](doc/images/hello.png "Main Image") 
-*For now the kernel is only able to print an 'Hello World!' string*
 
-ParvaOS is an operating system written in Rust by Francesco Giannice.
+> NOTE: For now the kernel is only able to print an 'Hello World!' string
+
+**ParvaOS** is an operating system written in Rust by Francesco Giannice.
 
 ## Features
 
