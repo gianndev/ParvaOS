@@ -3,24 +3,19 @@
 
 use core::panic::PanicInfo; // Imports the `PanicInfo` type for handling panics.
 
-static HELLO: &[u8] = b"Hello World!";
+mod vga;
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn _start() -> ! {
-    let vga_buffer = 0xb8000 as *mut u8;
-
-    for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
-        }
-    }
+    println!("Hello World{}", "!");
 
     loop {}
 }
 
-// This function is called in case of panic.
-#[panic_handler] // Marks the function as the panic handler for the program.
-fn panic(_info: &PanicInfo) -> ! { // Defines the panic handler that takes a `PanicInfo` reference and never returns.
-    loop {} // Halts the program in an infinite loop upon a panic.
+// The panic_handler attribute defines the function that the compiler should invoke when a panic occurs. 
+// The standard library provides its own panic handler function, but in a no_std environment we need to define one ourselves:
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
+    loop{}
 }
