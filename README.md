@@ -12,13 +12,14 @@
 - VGA Text mode
 
 ## TODO:
-- [x] VGA Text mode
-- [ ] Hardware interrupts
-- [ ] Serial output
-- [ ] Paging
-- [ ] Heap allocation
-- [ ] Add a basic file system
-- [ ] Implement a basic GUI
+* Manage CPU Exceptions
+* Hardware interrupts
+* Serial output
+* Paging
+* Heap allocation
+* Add a basic file system
+* Add some games
+* Implement a basic GUI
 
 ## How to compile ParvaOS' code?
 
