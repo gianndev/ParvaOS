@@ -1,19 +1,10 @@
 [package]
-name = "parvaos"
+name = "parva_os"
 version = "0.0.1"
 authors = ["Francesco Giannice <giannice.developer@gmail.com>"]
 edition = "2024"
 readme = "README.md"
 license = "GPL-3.0-only"
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
-
-[lib]
-test = false
 
 [dependencies]
 bootloader = "0.9"
