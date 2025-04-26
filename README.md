@@ -9,10 +9,11 @@
 ## Features
 
 - x86 CPU support (64 bit)
+- VGA Text mode
 
 ## TODO:
+- [x] VGA Text mode
 - [ ] Hardware interrupts
-- [ ] VGA Text mode with customizable font and color palette
 - [ ] Serial output
 - [ ] Paging
 - [ ] Heap allocation
