@@ -7,6 +7,7 @@
 - x86 CPU support (64 bit)
 - VGA Text Mode
 - Serial output
+- CPU exceptions management
 
 ## How to compile ParvaOS' code?
 
