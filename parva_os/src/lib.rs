@@ -3,11 +3,17 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
 use core::panic::PanicInfo;
 
 pub mod serial;
 pub mod vga;
+pub mod interrupts;
+
+pub fn init() {
+    interrupts::init_idt();
+}
 
 pub trait Testable {
     fn run(&self) -> ();
@@ -39,13 +45,13 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     loop {}
 }
 
-// To mamage the exit of QEMU
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum QemuExitCode {
     Success = 0x10,
     Failed = 0x11,
 }
+
 pub fn exit_qemu(exit_code: QemuExitCode) {
     use x86_64::instructions::port::Port;
 
@@ -59,6 +65,7 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 #[cfg(test)]
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+    init();
     test_main();
     loop {}
 }

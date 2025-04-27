@@ -5,17 +5,8 @@
 ## Features
 
 - x86 CPU support (64 bit)
-- VGA Text mode
-
-## TODO:
-- [ ] Manage CPU Exceptions
-- [ ] Hardware interrupts
-- [ ] Serial output
-- [ ] Paging
-- [ ] Heap allocation
-- [ ] Add a basic file system
-- [ ] Add some games
-- [ ] Implement a basic GUI
+- VGA Text Mode
+- Serial output
 
 ## How to compile ParvaOS' code?
 
@@ -32,13 +23,13 @@ If you want to compile the whole project on your local machine, follow these ins
     cd parvaos
     ```
 
-3. **Build the ParvaOS kernel:**
+3. **Build ParvaOS:**
 
     ```
     make build
     ```
 
-4. **Run the ParvaOS kernel:**
+4. **Run ParvaOS:**
 
     ```
     make run
