@@ -1,9 +1,5 @@
 # ParvaOS
 
-![Main Image](doc/images/hello.png "Main Image") 
-
-> NOTE: For now the kernel is only able to print an 'Hello World!' string
-
 **ParvaOS** is an operating system written in Rust by Francesco Giannice.
 
 ## Features
@@ -12,14 +8,14 @@
 - VGA Text mode
 
 ## TODO:
-* Manage CPU Exceptions
-* Hardware interrupts
-* Serial output
-* Paging
-* Heap allocation
-* Add a basic file system
-* Add some games
-* Implement a basic GUI
+- [ ] Manage CPU Exceptions
+- [ ] Hardware interrupts
+- [ ] Serial output
+- [ ] Paging
+- [ ] Heap allocation
+- [ ] Add a basic file system
+- [ ] Add some games
+- [ ] Implement a basic GUI
 
 ## How to compile ParvaOS' code?
 
@@ -47,9 +43,6 @@ If you want to compile the whole project on your local machine, follow these ins
     ```
     make run
     ```
-
-## Acknowledgments:
-* A special thanks to Phil-Opp's [blog](https://os.phil-opp.com/) 
 
 ## License
 
