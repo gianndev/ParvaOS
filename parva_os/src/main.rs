@@ -7,7 +7,7 @@
 use parva_os::println;
 use core::panic::PanicInfo;  // We import this to get information about future panics
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
@@ -17,7 +17,7 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     println!("It did not crash!");
-    loop {}
+    parva_os::hlt_loop();
 }
 
 // This function is called in case of panic
