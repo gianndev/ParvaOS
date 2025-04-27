@@ -8,6 +8,7 @@
 - VGA Text Mode
 - Serial output
 - CPU exceptions management
+- Paging
 
 ## How to compile ParvaOS' code?
 
