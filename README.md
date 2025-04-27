@@ -1,6 +1,6 @@
 # ParvaOS
 
-**ParvaOS** is an operating system written in Rust by Francesco Giannice.
+**ParvaOS** is an operating system written from scratch in Rust by Francesco Giannice. It is capable of running on all 64-bit x86 architecture computers with BIOS and has been found to run on QEMU as a virtual machine emulator.
 
 ## Features
 
@@ -9,6 +9,7 @@
 - Serial output
 - CPU exceptions management
 - Paging
+- Heap allocation
 
 ## How to compile ParvaOS' code?
 

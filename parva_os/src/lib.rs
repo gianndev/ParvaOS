@@ -6,12 +6,14 @@
 #![feature(abi_x86_interrupt)]
 
 use core::panic::PanicInfo;
+extern crate alloc;
 
 pub mod serial;
 pub mod vga;
 pub mod interrupts;
 pub mod gdt;
 pub mod memory;
+pub mod allocator;
 
 pub fn init() {
     gdt::init();
