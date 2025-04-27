@@ -1,59 +1,37 @@
-#![no_std]
-#![no_main]
-#![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
-#![reexport_test_harness_main = "test_main"]
+#![no_std] // Don't link the Rust standard library
+#![no_main] // Disables the fact that the first function to be started must be called 'main'
+#![feature(custom_test_frameworks)] // This line enables an unstable feature in Rust, specifically the custom_test_frameworks feature (useful because we are not using the standard library)
+#![test_runner(parva_os::test_runner)] // This line specifies to use the function test_runner (defined after in the code) as the test runner instead of using Rust’s built-in test framework (which requires the standard library)
+#![reexport_test_harness_main = "test_main"] // Redirect the test entry point to a function called 'test_main' instead of using the default entry point
 
-use core::{arch::asm, panic::PanicInfo}; // Imports the `PanicInfo` type for handling panics.
-
-mod vga;
+use parva_os::println;
+use core::panic::PanicInfo;  // We import this to get information about future panics
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
     #[cfg(test)]
-    test_main(); // Calls the test main function if the test configuration is enabled.
+    test_main();
 
     loop {}
 }
 
-// The panic_handler attribute defines the function that the compiler should invoke when a panic occurs. 
-// The standard library provides its own panic handler function, but in a no_std environment we need to define one ourselves:
+// This function is called in case of panic
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop{}
+    loop {}
 }
 
 #[cfg(test)]
-pub fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running tests...");
-    for test in tests {
-        test();
-    }
-    println!("All tests passed!");
-    exit_qemu(QemuExitCode::QEMU_EXIT_SUCCESS);
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    parva_os::test_panic_handler(info)
 }
 
 #[test_case]
 fn trivial_assertion() {
-    print!("trivial_assertion...");
     assert_eq!(1, 1);
-    println!("[ok]");
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExitCode {
-    QEMU_EXIT_SUCCESS = 0x10,
-    QEMU_EXIT_FAILURE = 0x11,
-}
-
-pub fn exit_qemu(exit_code: QemuExitCode) {
-    unsafe {
-        // The `out` instruction is used to send data to a port in x86 assembly.
-        // The `0xf4` port is used by QEMU to exit the emulator.
-        asm!("out dx, eax", in("dx") 0xf4, in("eax") exit_code as u32);
-    }
 }
