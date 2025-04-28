@@ -10,6 +10,13 @@
 - CPU exceptions management
 - Paging
 - Heap allocation
+- Basic shell
+
+## Planned to be implemented
+- [ ] Some games
+- [ ] More commands in the shell
+- [ ] A file system
+- [ ] A basic GUI
 
 ## How to compile ParvaOS' code?
 

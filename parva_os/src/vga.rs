@@ -35,6 +35,8 @@ use core::fmt; // The fmt module provides essential stuff for text output, like 
 use lazy_static::lazy_static; // lazy_static is used to initialize commands to be done only once at the beginning of the program and not in future (like a "bootloader" of the code)
 use spin::Mutex; // Mutex ensures only one thread or execution context can access a particular resource at a time. In this case, it ensures that only one part of the code can access the WRITER at once, which is crucial for preventing concurrent access issues
 use volatile::Volatile; // Useful to make sure that all commands are executed in the right order, following the code
+use alloc::string::String;
+use alloc::format;
 
 // Let's define a code to be executed only once
 lazy_static! {
@@ -45,6 +47,7 @@ lazy_static! {
         column_position: 0, // We start writing in the first column
         color_code: ColorCode::new(Color::White, Color::Black), // Sets the text color to yellow on a black background
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }, // This gives WRITER access to the VGA text buffer at memory address 0xb8000, which is where text mode VGA buffers are located on x86 systems
+        cursor_visible: true,
     });
 }
 
@@ -105,52 +108,115 @@ pub struct Writer {
     column_position: usize, // Tracks the current position within a line (or column) on the screen
     color_code: ColorCode, // Stores the color in which characters will be printed
     buffer: &'static mut Buffer, // A mutable reference to a Buffer that has a static lifetime. This reference points to the entire VGA text buffer in memory
+    pub cursor_visible: bool,
 }
 
 // This block defines the methods that handle writing operations for the Writer struct
 impl Writer {
-    // Writes an ASCII byte to the buffer.
-    //
-    // Wraps lines at `BUFFER_WIDTH`. Supports the `\n` newline character.
+    // Function to show the cursor
+    pub fn show_cursor(&mut self) {
+        if self.column_position < BUFFER_WIDTH {
+            self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
+                ascii_character: b'_',
+                color_code: self.color_code,
+            });
+        }
+    }
+
+    // Function to hide the cursor
+    pub fn hide_cursor(&mut self) {
+        if self.column_position < BUFFER_WIDTH {
+            self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
+                ascii_character: b' ', // Empty space
+                color_code: self.color_code,
+            });
+        }
+    }
+
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
+            0x08 => {
+                // Hide cursor before deleting
+                self.hide_cursor();
+    
+                let prompt_length = self.prompt_length();
+                if self.column_position > prompt_length {
+                    self.column_position -= 1;
+                    self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
+                        ascii_character: b' ', // Change with a space character
+                        color_code: self.color_code,
+                    });
+                }
+    
+                // Show the updated cursor
+                self.show_cursor();
+            }
             byte => {
                 if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
-
+    
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
-
+    
                 let color_code = self.color_code;
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
                     color_code,
                 });
                 self.column_position += 1;
+    
+                // Show the updated cursor
+                self.show_cursor();
             }
         }
+    }    
+
+    // Calculate the length of the current prompt (includes the folder path and "> ")
+    fn prompt_length(&self) -> usize {
+        // Suppose `self.get_prompt()` returns the prompt string
+        // For example: "T> " or "exampleoffolder> "
+        self.get_prompt().len()
     }
 
-    // Writes the given ASCII string to the buffer.
-    //
-    // Wraps lines at `BUFFER_WIDTH`. Supports the `\n` newline character. Does **not**
-    // support strings with non-ASCII characters, since they can't be printed in the VGA text
-    // mode.
-    fn write_string(&mut self, s: &str) {
+    pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
-                // printable ASCII byte or newline
+                // Handling the backspace character
+                0x08 => {
+                    // Hide cursor before deleting
+                    self.hide_cursor();
+
+                    let prompt_length = self.prompt_length();
+                    if self.column_position > prompt_length {
+                        self.column_position -= 1;
+                        self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
+                            ascii_character: b' ',
+                            color_code: self.color_code,
+                        });
+                    }
+
+                    // Re-show cursor after deletion
+                    self.show_cursor();
+                },
+                // Printable ASCII character or newline
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
-                // not part of printable ASCII range
+                // Unrecognized characters
                 _ => self.write_byte(0xfe),
             }
         }
     }
 
-    // Shifts all lines one line up and clears the last row.
-    fn new_line(&mut self) {
+    fn get_prompt(&self) -> String {
+        format!("> ")
+    }  
+
+    pub fn new_line(&mut self) {
+        // Hide the cursor before going to the next new line
+        self.hide_cursor();
+    
+        // Move all rows up
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
                 let character = self.buffer.chars[row][col].read();
@@ -159,7 +225,10 @@ impl Writer {
         }
         self.clear_row(BUFFER_HEIGHT - 1);
         self.column_position = 0;
-    }
+    
+        // Don't write the prompt here, we'll only do it when the user presses enter
+        self.show_cursor(); // Show cursor again
+    } 
 
     // Clears a row by overwriting it with blank characters.
     fn clear_row(&mut self, row: usize) {

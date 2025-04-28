@@ -1,8 +1,12 @@
-use crate::{gdt, print, println, hlt_loop};
+use crate::{gdt, println, hlt_loop, vga::WRITER};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
+use alloc::string::String;
+use alloc::{format, vec::Vec};
+
+static mut INPUT_BUFFER: String = String::new();
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -72,7 +76,26 @@ extern "x86-interrupt" fn double_fault_handler(
 }
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    print!(".");
+    use x86_64::instructions::interrupts;
+
+    interrupts::without_interrupts(|| {
+        // Declare access to CURSOR_TICKS safe with `unsafe`
+        unsafe {
+            static mut CURSOR_TICKS: usize = 0;
+            let mut writer = WRITER.lock();
+
+            CURSOR_TICKS += 1;
+            if CURSOR_TICKS % 10 == 0 { // Flash every 10 timer ticks
+                if writer.cursor_visible {
+                    writer.hide_cursor();
+                } else {
+                    writer.show_cursor();
+                }
+                writer.cursor_visible = !writer.cursor_visible;
+            }
+        }
+    });
+
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
@@ -100,8 +123,47 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
+                DecodedKey::Unicode(character) => {
+                    if character == '\n' {
+                        let mut writer = WRITER.lock();
+                        writer.new_line();
+                        unsafe {
+                            // Process the command written by the user
+                            process_command(&INPUT_BUFFER, &mut writer);
+
+                            // Clears the buffer for the next input
+                            INPUT_BUFFER.clear();
+
+                            // Show the prompt
+                            writer.write_string(format!("> ").as_str());
+                        }
+                    } else if character == '\x08' {  // \x08 is the ASCII code for Backspace
+                        unsafe {
+                            let mut writer = WRITER.lock();
+                
+                            if !INPUT_BUFFER.is_empty() {
+                                // Remove the last character from the buffer
+                                INPUT_BUFFER.pop();
+                
+                                // Clear the last character on the screen (backspace behavior)
+                                writer.write_byte(0x08);  // ASCII value for backspace
+                                writer.write_byte(b' ');   // Overwrite the character with a space
+                                writer.write_byte(0x08);  // Move the cursor back again
+                            }
+                        }
+                    } else {
+                        unsafe {
+                            let mut writer = WRITER.lock();
+
+                            // Add the character to the input buffer
+                            INPUT_BUFFER.push(character);
+
+                            // Show the character on the screen
+                            writer.write_byte(character as u8);
+                        }
+                    }
+                },
+                DecodedKey::RawKey(_key) => {},
             }
         }
     }
@@ -109,6 +171,24 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
+    }
+}
+
+fn process_command(command: &str, writer: &mut crate::vga::Writer) {
+    let parts: Vec<&str> = command.split_whitespace().collect();
+    match parts.as_slice() {
+        // 'hello' command
+        ["hello"] => {
+            writer.write_string("Hello World!\n");
+        }
+        // Empty Command
+        [] => {
+            // Ignore empty command
+        }
+        // Unknown command
+        _ => {
+            writer.write_string("Unknown Command\n");
+        }
     }
 }
 
