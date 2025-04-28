@@ -181,6 +181,16 @@ fn process_command(command: &str, writer: &mut crate::vga::Writer) {
         ["hello"] => {
             writer.write_string("Hello World!\n");
         }
+        // `help` command
+        ["help"] | ["help "] => {
+            writer.write_string("hello   | to greet the user
+help    | for help about ParvaOS
+info    | for info about ParvaOS\n");
+        }
+        // `info` command
+        ["info"] | ["info "] => {
+            writer.write_string("ParvaOS is an operating system created by Francesco Giannice as hobby! He created it to show everyone that, even though no one was able to help him and no one believed he was capable of it, he was able to create an OS of his own.\nThe current version is 0.0.1\n");
+        }
         // Empty Command
         [] => {
             // Ignore empty command
