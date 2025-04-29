@@ -20,6 +20,10 @@
 - [ ] A file system
 - [ ] A basic GUI
 
+## Documentation
+
+Documentation is available in [doc](doc/Commands.md)/ folder
+
 ## How to run ParvaOS?
 
 To use ParvaOS you can just download the `parva_os.bin` file from the release section in GitHub, and then use it on real hardware or just on a virtual machine (I've tested that on QEMU everything works).
