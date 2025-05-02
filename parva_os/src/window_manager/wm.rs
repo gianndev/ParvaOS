@@ -201,7 +201,8 @@ fn handle_input(window: &mut Window, ch: u8) {
             }
         },
         _ => {
-            if window.cursor_pos < window.width && ch.is_ascii_graphic() {
+            // Allow space (0x20) and all printable ASCII characters
+            if window.cursor_pos < window.width && (ch == b' ' || ch.is_ascii_graphic()) {
                 window.input_buffer.push(ch as char);
                 window.contents[window.current_line][window.cursor_pos] = 
                     ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
