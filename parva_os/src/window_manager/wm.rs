@@ -30,6 +30,7 @@ pub struct Window {
     command_history: Vec<String>,
     current_line: usize,
     cursor_pos: usize,
+    needs_redraw: bool,
 }
 
 impl Window {
@@ -56,6 +57,7 @@ impl Window {
             command_history: Vec::new(),
             current_line: 0,
             cursor_pos: 2,  // Start after "> "
+            needs_redraw: true,
         }
     }
 
@@ -130,23 +132,41 @@ impl Desktop {
 pub fn gui() -> ! {
     let mut window1 = Window::new("Terminal".to_owned(), 10, 5, 50, 15);
     let mut desktop = Desktop::new();
+    let mut needs_redraw = true;
 
     loop {
-        desktop.display();
-        window1.draw(desktop.buffer);
-
-        // Process input
+        // Process all pending input first
         let mut queue = INPUT_QUEUE.lock();
+        let had_input = !queue.is_empty();
         while let Some(ch) = queue.pop_front() {
             handle_input(&mut window1, ch);
         }
         drop(queue);
 
-        sleep(1_000_000);
+        // Only redraw if we had input or periodically for cursor blink
+        if had_input || needs_redraw {
+            desktop.display();
+            window1.draw(desktop.buffer);
+            needs_redraw = false;
+        }
+
+        // Shorter sleep but maintain cursor blink timing
+        sleep(10_000);
+        
+        // Force periodic redraw for cursor blink (every 500ms)
+        static mut COUNTER: u64 = 0;
+        unsafe {
+            COUNTER += 1;
+            if COUNTER % 50_000 == 0 { // 50,000 * 10μs = 500ms
+                needs_redraw = true;
+                COUNTER = 0;
+            }
+        }
     }
 }
 
 fn handle_input(window: &mut Window, ch: u8) {
+    window.needs_redraw = true;
     match ch {
         b'\n' => {
             // Process command
@@ -192,6 +212,7 @@ fn handle_input(window: &mut Window, ch: u8) {
 }
 
 fn add_new_line(window: &mut Window) {
+    window.needs_redraw = true;
     window.current_line += 1;
     if window.current_line >= window.height - 1 {
         // Scroll up
@@ -209,6 +230,8 @@ fn add_new_line(window: &mut Window) {
 }
 
 fn add_output_line(window: &mut Window, text: &str) {
+    window.needs_redraw = true;
+    
     let bytes = text.as_bytes();
     let max_len = window.width.min(bytes.len());
     
