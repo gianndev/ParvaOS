@@ -26,17 +26,25 @@ pub struct Window {
     y_pos: usize,
     width: usize,
     height: usize,
-    cursor_row: usize,
-    cursor_col: usize,
-    cursor_visible: bool,
+    input_buffer: String,
+    command_history: Vec<String>,
+    current_line: usize,
+    cursor_pos: usize,
 }
 
 impl Window {
     pub fn new(name: String, x_pos: usize, y_pos: usize, width: usize, height: usize) -> Self {
-        let contents = vec![
+        let mut contents = vec![
             vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); width];
             height - 1
         ];
+        
+        // Add initial prompt
+        let prompt = b"> ";
+        for (i, &ch) in prompt.iter().enumerate() {
+            contents[0][i] = ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+        }
+
         Self {
             contents,
             name,
@@ -44,9 +52,10 @@ impl Window {
             y_pos,
             width,
             height,
-            cursor_row: 0,
-            cursor_col: 0,
-            cursor_visible: true,
+            input_buffer: String::new(),
+            command_history: Vec::new(),
+            current_line: 0,
+            cursor_pos: 2,  // Start after "> "
         }
     }
 
@@ -72,6 +81,24 @@ impl Window {
             for col in 0..self.width {
                 buffer[self.y_pos + 1 + row][self.x_pos + col] = self.contents[row][col];
             }
+        }
+
+        for (row_idx, row) in self.contents.iter().enumerate() {
+            let screen_row = self.y_pos + 1 + row_idx;
+            for (col_idx, &ch) in row.iter().enumerate() {
+                let screen_col = self.x_pos + col_idx;
+                if screen_row < BUFFER_HEIGHT && screen_col < BUFFER_WIDTH {
+                    buffer[screen_row][screen_col] = ch;
+                }
+            }
+        }
+    
+        // Draw cursor
+        let cursor_row = self.y_pos + 1 + self.current_line;
+        let cursor_col = self.x_pos + self.cursor_pos;
+        if cursor_row < BUFFER_HEIGHT && cursor_col < BUFFER_WIDTH {
+            buffer[cursor_row][cursor_col] = ScreenChar::new(b'_', 
+                ColorCode::new(Color::White, Color::LightGray));
         }
     }    
 }
@@ -101,9 +128,8 @@ impl Desktop {
 }
 
 pub fn gui() -> ! {
-    let mut window1 = Window::new("Welcome".to_owned(), 10, 5, 50, 15);
+    let mut window1 = Window::new("Terminal".to_owned(), 10, 5, 50, 15);
     let mut desktop = Desktop::new();
-    let mut cursor_blink_counter = 0;
 
     loop {
         desktop.display();
@@ -114,17 +140,8 @@ pub fn gui() -> ! {
         while let Some(ch) = queue.pop_front() {
             handle_input(&mut window1, ch);
         }
-        drop(queue); // Release the lock
+        drop(queue);
 
-        // Update cursor visibility
-        cursor_blink_counter += 1;
-        if cursor_blink_counter >= 10 {
-            window1.cursor_visible = !window1.cursor_visible;
-            cursor_blink_counter = 0;
-        }
-
-        // Draw cursor
-        draw_cursor(&window1, desktop.buffer);
         sleep(1_000_000);
     }
 }
@@ -132,48 +149,80 @@ pub fn gui() -> ! {
 fn handle_input(window: &mut Window, ch: u8) {
     match ch {
         b'\n' => {
-            window.cursor_row += 1;
-            window.cursor_col = 0;
-            if window.cursor_row >= window.contents.len() {
-                if window.contents.len() >= window.height - 1 {
-                    window.contents.remove(0);
-                    window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
-                    window.cursor_row = window.contents.len() - 1;
-                } else {
-                    window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
-                }
+            // Process command
+            let command = window.input_buffer.clone();
+            window.command_history.push(command.clone());
+            
+            // Add output line
+            let response = if command == "hello" {
+                "Hello World!"
+            } else if !command.is_empty() {
+                "Unknown command"
+            } else {
+                ""
+            };
+
+            // Add output line FIRST
+            if !response.is_empty() {
+                add_output_line(window, response);
             }
+
+            // THEN add new prompt line
+            add_new_line(window);
+            window.input_buffer.clear();
+            window.cursor_pos = 2;
         },
         0x08 => { // Backspace
-            if window.cursor_col > 0 {
-                window.cursor_col -= 1;
-                window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
-            } else if window.cursor_row > 0 {
-                window.cursor_row -= 1;
-                window.cursor_col = window.width - 1;
-                if window.cursor_row < window.contents.len() {
-                    window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
-                }
+            if window.cursor_pos > 2 && !window.input_buffer.is_empty() {
+                window.input_buffer.pop();
+                window.cursor_pos -= 1;
+                window.contents[window.current_line][window.cursor_pos] = 
+                    ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
             }
         },
         _ => {
-            if window.cursor_col >= window.width {
-                handle_input(window, b'\n');
-            }
-            if window.cursor_row < window.contents.len() && window.cursor_col < window.width {
-                window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(ch, ColorCode::new(Color::Black, Color::LightGray));
-                window.cursor_col += 1;
+            if window.cursor_pos < window.width && ch.is_ascii_graphic() {
+                window.input_buffer.push(ch as char);
+                window.contents[window.current_line][window.cursor_pos] = 
+                    ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+                window.cursor_pos += 1;
             }
         }
     }
 }
 
-fn draw_cursor(window: &Window, buffer: &mut Buffer2D) {
-    if window.cursor_visible {
-        let row = window.y_pos + 1 + window.cursor_row;
-        let col = window.x_pos + window.cursor_col;
-        if row < BUFFER_HEIGHT && col < BUFFER_WIDTH {
-            buffer[row][col] = ScreenChar::new(b'_', ColorCode::new(Color::Black, Color::LightGray));
-        }
+fn add_new_line(window: &mut Window) {
+    window.current_line += 1;
+    if window.current_line >= window.height - 1 {
+        // Scroll up
+        window.contents.remove(0);
+        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+        window.current_line = window.height - 2;
+    }
+    
+    // Add new prompt
+    let prompt = b"> ";
+    for (i, &ch) in prompt.iter().enumerate() {
+        window.contents[window.current_line][i] = 
+            ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+    }
+}
+
+fn add_output_line(window: &mut Window, text: &str) {
+    let bytes = text.as_bytes();
+    let max_len = window.width.min(bytes.len());
+    
+    window.current_line += 1;
+    if window.current_line >= window.height - 1 {
+        // Scroll up both contents and maintain current_line position
+        window.contents.remove(0);
+        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+        window.current_line = window.height - 2;
+    }
+
+    // Add output without prompt
+    for (i, &ch) in bytes.iter().take(max_len).enumerate() {
+        window.contents[window.current_line][i] = 
+            ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
     }
 }
