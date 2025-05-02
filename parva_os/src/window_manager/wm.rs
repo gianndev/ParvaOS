@@ -95,13 +95,25 @@ impl Desktop {
 }
 
 pub fn gui() -> ! {
-    let window1 = Window::new(
-        "Window 1".to_owned(),
+    let mut window1 = Window::new(
+        "Welcome".to_owned(),
         10,
         5,
         50,
         15,
     );
+
+    // Write a welcome message in the first row of the window
+    let text = b"Welcome to ParvaOS";
+    let text_color = ColorCode::new(Color::Black, Color::LightGray);
+    let start_col = (window1.width.saturating_sub(text.len())) / 2;
+
+    for (i, &ch) in text.iter().enumerate() {
+        if start_col + i < window1.width {
+            window1.contents[0][start_col + i] = ScreenChar::new(ch, text_color);
+        }
+    }
+
     let mut desktop = Desktop::new();
 
     loop {
@@ -109,5 +121,4 @@ pub fn gui() -> ! {
         window1.draw(desktop.buffer);
         sleep(10_000_000);
     }
-    
 }
