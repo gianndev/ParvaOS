@@ -47,7 +47,7 @@ lazy_static! {
         column_position: 0, // We start writing in the first column
         color_code: ColorCode::new(Color::White, Color::Black), // Sets the text color to yellow on a black background
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }, // This gives WRITER access to the VGA text buffer at memory address 0xb8000, which is where text mode VGA buffers are located on x86 systems
-        cursor_visible: true,
+        cursor_visible: false,
     });
 }
 
@@ -122,33 +122,10 @@ pub struct Writer {
 
 // This block defines the methods that handle writing operations for the Writer struct
 impl Writer {
-    // Function to show the cursor
-    pub fn show_cursor(&mut self) {
-        if self.column_position < BUFFER_WIDTH {
-            self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
-                ascii_character: b'_',
-                color_code: self.color_code,
-            });
-        }
-    }
-
-    // Function to hide the cursor
-    pub fn hide_cursor(&mut self) {
-        if self.column_position < BUFFER_WIDTH {
-            self.buffer.chars[BUFFER_HEIGHT - 1][self.column_position].write(ScreenChar {
-                ascii_character: b' ', // Empty space
-                color_code: self.color_code,
-            });
-        }
-    }
-
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
             0x08 => {
-                // Hide cursor before deleting
-                self.hide_cursor();
-    
                 let prompt_length = self.prompt_length();
                 if self.column_position > prompt_length {
                     self.column_position -= 1;
@@ -157,9 +134,6 @@ impl Writer {
                         color_code: self.color_code,
                     });
                 }
-    
-                // Show the updated cursor
-                self.show_cursor();
             }
             byte => {
                 if self.column_position >= BUFFER_WIDTH {
@@ -175,9 +149,6 @@ impl Writer {
                     color_code,
                 });
                 self.column_position += 1;
-    
-                // Show the updated cursor
-                self.show_cursor();
             }
         }
     }    
@@ -194,9 +165,6 @@ impl Writer {
             match byte {
                 // Handling the backspace character
                 0x08 => {
-                    // Hide cursor before deleting
-                    self.hide_cursor();
-
                     let prompt_length = self.prompt_length();
                     if self.column_position > prompt_length {
                         self.column_position -= 1;
@@ -205,9 +173,6 @@ impl Writer {
                             color_code: self.color_code,
                         });
                     }
-
-                    // Re-show cursor after deletion
-                    self.show_cursor();
                 },
                 // Printable ASCII character or newline
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
@@ -222,9 +187,6 @@ impl Writer {
     }  
 
     pub fn new_line(&mut self) {
-        // Hide the cursor before going to the next new line
-        self.hide_cursor();
-    
         // Move all rows up
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
@@ -234,9 +196,6 @@ impl Writer {
         }
         self.clear_row(BUFFER_HEIGHT - 1);
         self.column_position = 0;
-    
-        // Don't write the prompt here, we'll only do it when the user presses enter
-        self.show_cursor(); // Show cursor again
     } 
 
     // Clears a row by overwriting it with blank characters.

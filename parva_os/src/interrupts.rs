@@ -76,26 +76,6 @@ extern "x86-interrupt" fn double_fault_handler(
 }
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    use x86_64::instructions::interrupts;
-
-    interrupts::without_interrupts(|| {
-        // Declare access to CURSOR_TICKS safe with `unsafe`
-        unsafe {
-            static mut CURSOR_TICKS: usize = 0;
-            let mut writer = WRITER.lock();
-
-            CURSOR_TICKS += 1;
-            if CURSOR_TICKS % 10 == 0 { // Flash every 10 timer ticks
-                if writer.cursor_visible {
-                    writer.hide_cursor();
-                } else {
-                    writer.show_cursor();
-                }
-                writer.cursor_visible = !writer.cursor_visible;
-            }
-        }
-    });
-
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

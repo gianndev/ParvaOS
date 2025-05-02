@@ -1,6 +1,5 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
-use crate::interrupts::INPUT_QUEUE;
-use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}};
+use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, interrupts::INPUT_QUEUE};
 
 const DESKTOP_BG: Color = Color::LightBlue; // Define the background color for the desktop
 

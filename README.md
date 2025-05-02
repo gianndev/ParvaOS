@@ -13,12 +13,7 @@
 - Paging
 - Heap allocation
 - Basic shell
-
-## Planned to be implemented
-- [ ] Some games
-- [ ] More commands in the shell
-- [ ] A file system
-- [ ] A basic GUI
+- A graphical user interface (GUI)
 
 ## Documentation
 
