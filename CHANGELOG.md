@@ -3,6 +3,7 @@
 ## x.x.x (xxxx-xx-xx)
 - **GUI**: added a window manager that shows windows on screen
 - **Terminal**: for now ony one window is showed and it is the terminal, so everything happens inside this window
+- **Makefile**: changed so that the release file is an image file and not just a binary
 
 ## 0.0.1 (2025-04-28)
 - **x86_64 CPU**: supported x86 64-bit as CPU architecture
