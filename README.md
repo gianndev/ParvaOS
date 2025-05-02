@@ -13,7 +13,7 @@
 - Paging
 - Heap allocation
 - Basic shell
-- A graphical user interface (GUI)
+- Graphical User Interface (GUI)
 
 ## Documentation
 
