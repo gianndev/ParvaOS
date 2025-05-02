@@ -15,6 +15,7 @@ pub mod gdt;
 pub mod memory;
 pub mod allocator;
 pub mod window_manager;
+pub mod time;
 
 pub fn init() {
     gdt::init();

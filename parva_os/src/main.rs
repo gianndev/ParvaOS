@@ -33,11 +33,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("GUI is starting...\n");
 
     parva_os::window_manager::gui();
-    
-    #[cfg(test)]
-    test_main();
-
-    parva_os::hlt_loop();
 }
 
 // This function is called in case of panic

@@ -1,4 +1,6 @@
-use crate::vga::{ScreenChar, ColorCode, Color, BUFFER_WIDTH, BUFFER_HEIGHT};
+use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
+
+use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}};
 
 const DESKTOP_BG: Color = Color::LightBlue; // Define the background color for the desktop
 
@@ -15,6 +17,37 @@ fn background() -> Buffer2D {
     let buf = [[blank; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
     buf
+}
+
+pub struct Window {
+    contents: Vec<Vec<ScreenChar>>,
+    name: String,
+    x_pos: usize,
+    y_pos: usize,
+    width: usize,
+    height: usize,
+}
+
+impl Window {
+    pub fn new(name: String, x_pos: usize, y_pos: usize, width: usize, height: usize) -> Self {
+        let contents = vec![vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); width]; height];
+        Self {
+            contents,
+            name,
+            x_pos,
+            y_pos,
+            width,
+            height,
+        }
+    }
+
+    pub fn draw(&self, buffer: &mut Buffer2D) {
+        for row in 0..self.height {
+            for col in 0..self.width {
+                buffer[self.y_pos + row][self.x_pos + col] = self.contents[row][col];
+            }
+        }
+    }
 }
 
 pub struct Desktop {
@@ -42,8 +75,13 @@ impl Desktop {
 }
 
 pub fn gui() -> ! {
+    let window1 = Window::new("Welcome to Parva OS".to_owned(), 10, 5, 40, 10);
     let mut desktop = Desktop::new();
+
     loop {
         desktop.display();
+        window1.draw(desktop.buffer);
+        sleep(10_000_000);
     }
+    
 }
