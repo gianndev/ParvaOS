@@ -6,7 +6,6 @@
 
 extern crate alloc;
 
-use parva_os::println;
 use core::panic::PanicInfo;  // We import this to get information about future panics
 use bootloader::{entry_point, BootInfo};
 
@@ -17,10 +16,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use parva_os::memory::{self, BootInfoFrameAllocator};
     use x86_64::VirtAddr;
 
-    println!("Welcome to ParvaOS");
-    println!("Copyright (c) 2025 Francesco Giannice");
-    println!("v. 0.0.1\n");
-
     parva_os::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
@@ -29,9 +24,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    println!("\nPress 'Enter' to START\n");
-    println!("GUI is starting...\n");
-
     parva_os::window_manager::gui();
 }
 
@@ -39,6 +31,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    use parva_os::println;
+
     println!("{}", info);
     loop {}
 }

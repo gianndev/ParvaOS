@@ -47,7 +47,6 @@ lazy_static! {
         column_position: 0, // We start writing in the first column
         color_code: ColorCode::new(Color::White, Color::Black), // Sets the text color to yellow on a black background
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }, // This gives WRITER access to the VGA text buffer at memory address 0xb8000, which is where text mode VGA buffers are located on x86 systems
-        cursor_visible: false,
     });
 }
 
@@ -117,7 +116,6 @@ pub struct Writer {
     column_position: usize, // Tracks the current position within a line (or column) on the screen
     color_code: ColorCode, // Stores the color in which characters will be printed
     buffer: &'static mut Buffer, // A mutable reference to a Buffer that has a static lifetime. This reference points to the entire VGA text buffer in memory
-    pub cursor_visible: bool,
 }
 
 // This block defines the methods that handle writing operations for the Writer struct

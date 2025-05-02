@@ -35,14 +35,14 @@ pub struct Window {
 impl Window {
     pub fn new(name: String, x_pos: usize, y_pos: usize, width: usize, height: usize) -> Self {
         let mut contents = vec![
-            vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); width];
+            vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); width];
             height - 1
         ];
         
         // Add initial prompt
         let prompt = b"> ";
         for (i, &ch) in prompt.iter().enumerate() {
-            contents[0][i] = ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+            contents[0][i] = ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
         }
 
         Self {
@@ -99,7 +99,7 @@ impl Window {
         let cursor_col = self.x_pos + self.cursor_pos;
         if cursor_row < BUFFER_HEIGHT && cursor_col < BUFFER_WIDTH {
             buffer[cursor_row][cursor_col] = ScreenChar::new(b'_', 
-                ColorCode::new(Color::White, Color::LightGray));
+                ColorCode::new(Color::White, Color::Black));
         }
     }    
 }
@@ -175,15 +175,21 @@ fn handle_input(window: &mut Window, ch: u8) {
             // Add output line
             let response = if command == "hello" {
                 "Hello World!"
+            } else if command == "info" {
+                "ParvaOS version 0.0.1"
+            } else if command == "help" {
+                "hello | prints hello world\nhelp  | list of all commands\ninfo  | shows OS version"
             } else if !command.is_empty() {
                 "Unknown command"
             } else {
                 ""
             };
 
-            // Add output line FIRST
+            // Process response with potential newlines
             if !response.is_empty() {
-                add_output_line(window, response);
+                for line in response.split('\n') {
+                    add_output_line(window, line);
+                }
             }
 
             // THEN add new prompt line
@@ -196,7 +202,7 @@ fn handle_input(window: &mut Window, ch: u8) {
                 window.input_buffer.pop();
                 window.cursor_pos -= 1;
                 window.contents[window.current_line][window.cursor_pos] = 
-                    ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
+                    ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black));
             }
         },
         _ => {
@@ -204,7 +210,7 @@ fn handle_input(window: &mut Window, ch: u8) {
             if window.cursor_pos < window.width && (ch == b' ' || ch.is_ascii_graphic()) {
                 window.input_buffer.push(ch as char);
                 window.contents[window.current_line][window.cursor_pos] = 
-                    ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+                    ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
                 window.cursor_pos += 1;
             }
         }
@@ -217,7 +223,7 @@ fn add_new_line(window: &mut Window) {
     if window.current_line >= window.height - 1 {
         // Scroll up
         window.contents.remove(0);
-        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width]);
         window.current_line = window.height - 2;
     }
     
@@ -225,7 +231,7 @@ fn add_new_line(window: &mut Window) {
     let prompt = b"> ";
     for (i, &ch) in prompt.iter().enumerate() {
         window.contents[window.current_line][i] = 
-            ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+            ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
     }
 }
 
@@ -239,13 +245,13 @@ fn add_output_line(window: &mut Window, text: &str) {
     if window.current_line >= window.height - 1 {
         // Scroll up both contents and maintain current_line position
         window.contents.remove(0);
-        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+        window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width]);
         window.current_line = window.height - 2;
     }
 
     // Add output without prompt
     for (i, &ch) in bytes.iter().take(max_len).enumerate() {
         window.contents[window.current_line][i] = 
-            ScreenChar::new(ch, ColorCode::new(Color::White, Color::LightGray));
+            ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
     }
 }
