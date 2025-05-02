@@ -1,4 +1,4 @@
-# ParvaOS *(v. 0.0.1)*
+# ParvaOS *(v. 0.0.2)*
 
 ![Main Image](doc/images/main.png "Main Image") 
 
@@ -59,7 +59,7 @@ As I said you can just download the release image file of the operating system. 
 
 ## Version
 
-The current latest version of ParvaOS is **0.0.1**
+The current latest version of ParvaOS is **0.0.2**
 
 ## License
 

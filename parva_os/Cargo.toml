@@ -1,6 +1,7 @@
 [package]
 name = "parva_os"
-version = "0.0.1"
+description = "ParvaOS is an Operating System created completely in Rust 🦀"
+version = "0.0.2"
 authors = ["Francesco Giannice <giannice.developer@gmail.com>"]
 edition = "2021"
 readme = "README.md"

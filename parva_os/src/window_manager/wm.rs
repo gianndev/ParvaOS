@@ -176,7 +176,7 @@ fn handle_input(window: &mut Window, ch: u8) {
             let response = if command == "hello" {
                 "Hello World!"
             } else if command == "info" {
-                "ParvaOS version 0.0.1"
+                "ParvaOS version 0.0.2"
             } else if command == "help" {
                 "hello | prints hello world\nhelp  | list of all commands\ninfo  | shows OS version"
             } else if !command.is_empty() {
