@@ -77,10 +77,10 @@ pub enum Color {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 // Combines a foreground and background color into a single byte: the background color takes the upper 4 bits, and the foreground takes the lower 4 bits
-struct ColorCode(u8);
+pub struct ColorCode(u8);
 impl ColorCode {
     // Create a new `ColorCode` with the given foreground and background colors
-    fn new(foreground: Color, background: Color) -> ColorCode {
+    pub fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
@@ -89,13 +89,13 @@ impl ColorCode {
 // A screen character in the VGA text buffer, consisting of an ASCII character and a `ColorCode`
 #[repr(C)]
 // Represents a character on the screen, combining an ASCII character and a ColorCode
-struct ScreenChar {
-    ascii_character: u8,
-    color_code: ColorCode,
+pub struct ScreenChar {
+    pub(crate) ascii_character: u8,
+    pub(crate) color_code: ColorCode,
 }
 
-const BUFFER_HEIGHT: usize = 25;
-const BUFFER_WIDTH: usize = 80;
+pub const BUFFER_HEIGHT: usize = 25;
+pub const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 // Represents the VGA text buffer itself, which is an array of ScreenChar instances

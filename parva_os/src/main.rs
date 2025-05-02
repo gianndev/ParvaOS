@@ -30,6 +30,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
     println!("\nPress 'Enter' to START\n");
+    println!("GUI is starting...\n");
+
+    parva_os::window_manager::gui();
     
     #[cfg(test)]
     test_main();
