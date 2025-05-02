@@ -1,10 +1,10 @@
 use crate::{gdt, println, hlt_loop, vga::WRITER};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
-use spin;
+use spin::{self, Mutex};
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 use alloc::string::String;
-use alloc::{format, vec::Vec};
+use alloc::collections::VecDeque;
 
 static mut INPUT_BUFFER: String = String::new();
 
@@ -102,6 +102,11 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
     }
 }
 
+lazy_static! {
+    pub static ref INPUT_QUEUE: Mutex<VecDeque<u8>> = Mutex::new(VecDeque::new());
+}
+
+// Modify the keyboard handler to push characters into INPUT_QUEUE
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use spin::Mutex;
@@ -124,46 +129,14 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
                 DecodedKey::Unicode(character) => {
-                    if character == '\n' {
-                        let mut writer = WRITER.lock();
-                        writer.new_line();
-                        unsafe {
-                            // Process the command written by the user
-                            process_command(&INPUT_BUFFER, &mut writer);
-
-                            // Clears the buffer for the next input
-                            INPUT_BUFFER.clear();
-
-                            // Show the prompt
-                            writer.write_string(format!("> ").as_str());
-                        }
-                    } else if character == '\x08' {  // \x08 is the ASCII code for Backspace
-                        unsafe {
-                            let mut writer = WRITER.lock();
-                
-                            if !INPUT_BUFFER.is_empty() {
-                                // Remove the last character from the buffer
-                                INPUT_BUFFER.pop();
-                
-                                // Clear the last character on the screen (backspace behavior)
-                                writer.write_byte(0x08);  // ASCII value for backspace
-                                writer.write_byte(b' ');   // Overwrite the character with a space
-                                writer.write_byte(0x08);  // Move the cursor back again
-                            }
-                        }
-                    } else {
-                        unsafe {
-                            let mut writer = WRITER.lock();
-
-                            // Add the character to the input buffer
-                            INPUT_BUFFER.push(character);
-
-                            // Show the character on the screen
-                            writer.write_byte(character as u8);
-                        }
+                    let mut queue = INPUT_QUEUE.lock();
+                    match character {
+                        '\n' => queue.push_back(b'\n'),
+                        '\x08' => queue.push_back(0x08),
+                        _ => queue.push_back(character as u8),
                     }
                 },
-                DecodedKey::RawKey(_key) => {},
+                DecodedKey::RawKey(_) => {},
             }
         }
     }
@@ -172,38 +145,4 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
-}
-
-fn process_command(command: &str, writer: &mut crate::vga::Writer) {
-    let parts: Vec<&str> = command.split_whitespace().collect();
-    match parts.as_slice() {
-        // 'hello' command
-        ["hello"] => {
-            writer.write_string("Hello World!\n");
-        }
-        // `help` command
-        ["help"] | ["help "] => {
-            writer.write_string("hello   | to greet the user
-help    | for help about ParvaOS
-info    | for info about ParvaOS\n");
-        }
-        // `info` command
-        ["info"] | ["info "] => {
-            writer.write_string("ParvaOS is an operating system created by Francesco Giannice as hobby! He created it to show everyone that, even though no one was able to help him and no one believed he was capable of it, he was able to create an OS of his own.\nThe current version is 0.0.1\n");
-        }
-        // Empty Command
-        [] => {
-            // Ignore empty command
-        }
-        // Unknown command
-        _ => {
-            writer.write_string("Unknown Command\n");
-        }
-    }
-}
-
-#[test_case]
-fn test_breakpoint_exception() {
-    // invoke a breakpoint exception
-    x86_64::instructions::interrupts::int3();
 }

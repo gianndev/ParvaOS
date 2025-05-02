@@ -1,5 +1,5 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
-
+use crate::interrupts::INPUT_QUEUE;
 use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}};
 
 const DESKTOP_BG: Color = Color::LightBlue; // Define the background color for the desktop
@@ -26,6 +26,9 @@ pub struct Window {
     y_pos: usize,
     width: usize,
     height: usize,
+    cursor_row: usize,
+    cursor_col: usize,
+    cursor_visible: bool,
 }
 
 impl Window {
@@ -41,6 +44,9 @@ impl Window {
             y_pos,
             width,
             height,
+            cursor_row: 0,
+            cursor_col: 0,
+            cursor_visible: true,
         }
     }
 
@@ -95,30 +101,79 @@ impl Desktop {
 }
 
 pub fn gui() -> ! {
-    let mut window1 = Window::new(
-        "Welcome".to_owned(),
-        10,
-        5,
-        50,
-        15,
-    );
-
-    // Write a welcome message in the first row of the window
-    let text = b"Welcome to ParvaOS";
-    let text_color = ColorCode::new(Color::Black, Color::LightGray);
-    let start_col = (window1.width.saturating_sub(text.len())) / 2;
-
-    for (i, &ch) in text.iter().enumerate() {
-        if start_col + i < window1.width {
-            window1.contents[0][start_col + i] = ScreenChar::new(ch, text_color);
-        }
-    }
-
+    let mut window1 = Window::new("Welcome".to_owned(), 10, 5, 50, 15);
     let mut desktop = Desktop::new();
+    let mut cursor_blink_counter = 0;
 
     loop {
         desktop.display();
         window1.draw(desktop.buffer);
-        sleep(10_000_000);
+
+        // Process input
+        let mut queue = INPUT_QUEUE.lock();
+        while let Some(ch) = queue.pop_front() {
+            handle_input(&mut window1, ch);
+        }
+        drop(queue); // Release the lock
+
+        // Update cursor visibility
+        cursor_blink_counter += 1;
+        if cursor_blink_counter >= 10 {
+            window1.cursor_visible = !window1.cursor_visible;
+            cursor_blink_counter = 0;
+        }
+
+        // Draw cursor
+        draw_cursor(&window1, desktop.buffer);
+        sleep(1_000_000);
+    }
+}
+
+fn handle_input(window: &mut Window, ch: u8) {
+    match ch {
+        b'\n' => {
+            window.cursor_row += 1;
+            window.cursor_col = 0;
+            if window.cursor_row >= window.contents.len() {
+                if window.contents.len() >= window.height - 1 {
+                    window.contents.remove(0);
+                    window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+                    window.cursor_row = window.contents.len() - 1;
+                } else {
+                    window.contents.push(vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray)); window.width]);
+                }
+            }
+        },
+        0x08 => { // Backspace
+            if window.cursor_col > 0 {
+                window.cursor_col -= 1;
+                window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
+            } else if window.cursor_row > 0 {
+                window.cursor_row -= 1;
+                window.cursor_col = window.width - 1;
+                if window.cursor_row < window.contents.len() {
+                    window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(b' ', ColorCode::new(Color::White, Color::LightGray));
+                }
+            }
+        },
+        _ => {
+            if window.cursor_col >= window.width {
+                handle_input(window, b'\n');
+            }
+            if window.cursor_row < window.contents.len() && window.cursor_col < window.width {
+                window.contents[window.cursor_row][window.cursor_col] = ScreenChar::new(ch, ColorCode::new(Color::Black, Color::LightGray));
+                window.cursor_col += 1;
+            }
+        }
+    }
+}
+
+fn draw_cursor(window: &Window, buffer: &mut Buffer2D) {
+    if window.cursor_visible {
+        let row = window.y_pos + 1 + window.cursor_row;
+        let col = window.x_pos + window.cursor_col;
+        if row < BUFFER_HEIGHT && col < BUFFER_WIDTH {
+            buffer[row][col] = ScreenChar::new(b'_', ColorCode::new(Color::Black, Color::LightGray));
+        }
     }
 }
