@@ -6,6 +6,7 @@
 - **Added `clear` command**
 - **Added `shutdown` command**
 - **Added `reboot` command**
+- **Added Fullscreen**: now when the user is in move mode, pressing SPACE he can toggle fullscreen, and pressing SPACE another time he can make the window small again
 
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen

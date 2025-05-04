@@ -20,6 +20,12 @@ pub struct Window {
     move_mode: bool,
     prev_x: usize,
     prev_y: usize,
+    is_fullscreen: bool,       
+    original_x: usize,         
+    original_y: usize,         
+    original_width: usize,     
+    original_height: usize,    
+    needs_desktop_redraw: bool,
 }
 
 impl Window {
@@ -50,6 +56,12 @@ impl Window {
             move_mode: false,
             prev_x: x_pos,
             prev_y: y_pos,
+            is_fullscreen: false,
+            original_x: x_pos,
+            original_y: y_pos,
+            original_width: width,
+            original_height: height,
+            needs_desktop_redraw: false,
         }
     }
 
@@ -132,15 +144,18 @@ impl Window {
     }
 
     fn clear_previous_position(&self, buffer: &mut Buffer2D) {
-        // Clear previous header
+        // Clear previous header with bounds checking
         for col in 0..self.width {
-            buffer[self.prev_y][self.prev_x + col] = ScreenChar {
-                ascii_character: b' ',
-                color_code: ColorCode::new(Color::White, DESKTOP_BG),
-            };
+            let screen_col = self.prev_x + col;
+            if self.prev_y < BUFFER_HEIGHT && screen_col < BUFFER_WIDTH {
+                buffer[self.prev_y][screen_col] = ScreenChar {
+                    ascii_character: b' ',
+                    color_code: ColorCode::new(Color::White, DESKTOP_BG),
+                };
+            }
         }
         
-        // Clear previous content
+        // Clear previous content with bounds checking
         for row in 0..self.height {
             for col in 0..self.width {
                 let screen_row = self.prev_y + 1 + row;
@@ -185,10 +200,7 @@ impl Desktop {
     }
 
     pub fn display(&mut self) {
-        // Only used for initial draw
-        if self.needs_initial_draw {
-            self.initialize_background();
-        }
+        self.initialize_background();
     }
 }
 
@@ -209,12 +221,18 @@ pub fn gui() -> ! {
         }
         drop(queue);
 
-        if had_input || needs_redraw {
-            // Only redraw desktop background when exiting move mode
-            if !window1.move_mode && window1.prev_x != window1.x_pos || window1.prev_y != window1.y_pos {
+        if had_input || needs_redraw || window1.needs_desktop_redraw {
+            // Redraw desktop if needed
+            if window1.needs_desktop_redraw {
+                desktop.display();
+                window1.needs_desktop_redraw = false;
+            }
+
+            // Existing desktop redraw condition when exiting move mode
+            if !window1.move_mode && (window1.prev_x != window1.x_pos || window1.prev_y != window1.y_pos) {
                 desktop.display();
             }
-            
+
             window1.draw(desktop.buffer);
             needs_redraw = false;
         }
@@ -243,6 +261,54 @@ fn handle_input(window: &mut Window, ch: u8) {
             b's' => window.move_window(0, 1),
             b'a' => window.move_window(-1, 0),
             b'd' => window.move_window(1, 0),
+            b' ' => { // Space key toggles fullscreen
+                if window.is_fullscreen {
+                    // Restore original size and position
+                    window.x_pos = window.original_x;
+                    window.y_pos = window.original_y;
+                    window.width = window.original_width;
+                    window.height = window.original_height;
+                    window.is_fullscreen = false;
+                    window.needs_desktop_redraw = true;
+                    
+                    // Reset contents to original size
+                    let mut new_contents = vec![
+                        vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width];
+                        window.height - 1
+                    ];
+                    // Copy existing content lines (truncate to new width)
+                    for (i, row) in window.contents.iter().enumerate().take(window.height - 1) {
+                        let copy_len = row.len().min(window.width);
+                        new_contents[i][..copy_len].copy_from_slice(&row[..copy_len]);
+                    }
+                    window.contents = new_contents;
+                } else {
+                    // Save current state
+                    window.original_x = window.x_pos;
+                    window.original_y = window.y_pos;
+                    window.original_width = window.width;
+                    window.original_height = window.height;
+                    
+                    // Enter fullscreen
+                    window.x_pos = 0;
+                    window.y_pos = 0;
+                    window.width = BUFFER_WIDTH;
+                    window.height = BUFFER_HEIGHT;
+                    window.is_fullscreen = true;
+                    
+                    // Expand contents to full screen size
+                    let mut new_contents = vec![
+                        vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); BUFFER_WIDTH];
+                        BUFFER_HEIGHT - 1
+                    ];
+                    // Copy existing content lines
+                    for (i, row) in window.contents.iter().enumerate() {
+                        new_contents[i][..row.len().min(BUFFER_WIDTH)].copy_from_slice(&row[..row.len().min(BUFFER_WIDTH)]);
+                    }
+                    window.contents = new_contents;
+                }
+                window.needs_redraw = true;
+            },
             _ => {},
         }
         return;
@@ -287,7 +353,9 @@ fn handle_input(window: &mut Window, ch: u8) {
                  help     | list of commands\n\
                  info     | shows OS version\n\
                  reboot   | restart system\n\
-                 shutdown | power off system"
+                 shutdown | power off system\n\
+                 [TAB]    | enter move mode (move with WASD)\n\
+                 [SPACE]  | toggle fullscreen"
             } else if !command.is_empty() {
                 "Unknown command"
             } else {
