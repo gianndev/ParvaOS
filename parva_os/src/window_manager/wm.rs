@@ -5,19 +5,6 @@ const DESKTOP_BG: Color = Color::LightBlue;
 
 type Buffer2D = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
-fn background() -> Buffer2D {
-    // Define a blank character with white foreground and blue background
-    let blank = ScreenChar {
-        ascii_character: b' ',
-        color_code: ColorCode::new(Color::White, DESKTOP_BG),
-    };
-
-    // Fill the entire screen with the blank character
-    let buf = [[blank; BUFFER_WIDTH]; BUFFER_HEIGHT];
-
-    buf
-}
-
 pub struct Window {
     contents: Vec<Vec<ScreenChar>>,
     name: String,
@@ -82,6 +69,15 @@ impl Window {
             buffer[header_row][self.x_pos + col] = ScreenChar::new(b' ', header_color);
         }
 
+        // Write the name centered in the header
+        let name_bytes = self.name.as_bytes();
+        let start = (self.width.saturating_sub(name_bytes.len())) / 2;
+        for (i, &b) in name_bytes.iter().enumerate() {
+            if start + i < self.width {
+                buffer[header_row][self.x_pos + start + i] = ScreenChar::new(b, header_color);
+            }
+        }
+
         // Draw window contents
         for (row_idx, row) in self.contents.iter().enumerate() {
             let screen_row = self.y_pos + 1 + row_idx;
@@ -115,19 +111,24 @@ impl Window {
         }
     } 
 
-    // Add these new methods
     pub fn move_window(&mut self, dx: isize, dy: isize) {
         self.prev_x = self.x_pos;
         self.prev_y = self.y_pos;
         
         // Calculate new position with bounds checking
-        self.x_pos = (self.x_pos as isize + dx)
+        let new_x = (self.x_pos as isize + dx)
             .max(0)
             .min((BUFFER_WIDTH - self.width) as isize) as usize;
             
-        self.y_pos = (self.y_pos as isize + dy)
+        let new_y = (self.y_pos as isize + dy)
             .max(0)
             .min((BUFFER_HEIGHT - self.height - 1) as isize) as usize;
+
+        if new_x != self.x_pos || new_y != self.y_pos {
+            self.x_pos = new_x;
+            self.y_pos = new_y;
+            self.needs_redraw = true;
+        }
     }
 
     fn clear_previous_position(&self, buffer: &mut Buffer2D) {
@@ -209,10 +210,11 @@ pub fn gui() -> ! {
         drop(queue);
 
         if had_input || needs_redraw {
-            if window1.move_mode {
-                // Full redraw when moving
+            // Only redraw desktop background when exiting move mode
+            if !window1.move_mode && window1.prev_x != window1.x_pos || window1.prev_y != window1.y_pos {
                 desktop.display();
             }
+            
             window1.draw(desktop.buffer);
             needs_redraw = false;
         }
@@ -231,8 +233,6 @@ pub fn gui() -> ! {
 }
 
 fn handle_input(window: &mut Window, ch: u8) {
-    window.needs_redraw = true;
-    
     if window.move_mode {
         match ch {
             0x1B => { // Escape key
@@ -247,7 +247,7 @@ fn handle_input(window: &mut Window, ch: u8) {
         }
         return;
     }
-    
+
     match ch {
         b'\n' => {
             // Process command
@@ -301,6 +301,8 @@ fn handle_input(window: &mut Window, ch: u8) {
             }
         }
     }
+
+    window.needs_redraw = true;
 }
 
 fn add_new_line(window: &mut Window) {
