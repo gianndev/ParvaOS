@@ -15,6 +15,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use parva_os::allocator;
     use parva_os::memory::{self, BootInfoFrameAllocator};
     use x86_64::VirtAddr;
+    use parva_os::thread_manager;
 
     parva_os::init();
 
