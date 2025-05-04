@@ -277,14 +277,17 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "shutdown" {
                 crate::exit_qemu(crate::QemuExitCode::Success);
                 crate::hlt_loop();
+            } else if command == "reboot" {
+                crate::reboot();
             } else if command == "info" {
                 "ParvaOS version 0.0.2"
             } else if command == "help" {
-                "hello   | prints hello world\n\
-                 help    | list of commands\n\
-                 info    | shows OS version\n\
-                 clear   | clear terminal\n\
-                 shutdown| power off system"
+                "clear    | clear terminal\n\
+                 hello    | prints hello world\n\
+                 help     | list of commands\n\
+                 info     | shows OS version\n\
+                 reboot   | restart system\n\
+                 shutdown | power off system"
             } else if !command.is_empty() {
                 "Unknown command"
             } else {

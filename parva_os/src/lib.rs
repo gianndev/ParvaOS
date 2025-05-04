@@ -71,6 +71,22 @@ pub fn exit_qemu(_exit_code: QemuExitCode) {
     hlt_loop(); // Halt the CPU after sending the shutdown signal
 }
 
+// Reboots the system by sending a reset command to the keyboard controller.
+pub fn reboot() -> ! {
+    use x86_64::instructions::port::Port;
+
+    // The standard method on x86 is to write 0xFE to port 0x64
+    unsafe {
+        let mut port: Port<u8> = Port::new(0x64);
+        port.write(0xFE);
+    }
+
+    // In case the above doesn't trigger a reboot, halt the CPU.
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+
 pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();

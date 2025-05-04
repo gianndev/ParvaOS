@@ -6,6 +6,7 @@
 |   hello     | to make the OS greet you                                   |
 |   help      | for help about all commands available                      |
 |   info      | to have some info about ParvaOS                            |
+|   reboot    | to reboot the operating system                             |
 |   shutdown  | to power off the operating system                          |
 
 ## **Instructions for use 📖**

@@ -5,6 +5,7 @@
 - **Window movimng**: added the ability to move windows with WASD keys in move_mode
 - **Added `clear` command**
 - **Added `shutdown` command**
+- **Added `reboot` command**
 
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen
