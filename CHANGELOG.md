@@ -1,5 +1,7 @@
 # Changelog
 
+## x.x.x (xxxx-xx-xx)
+
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen
 - **Terminal**: for now ony one window is showed and it is the terminal, so everything happens inside this window

@@ -42,8 +42,9 @@ As I said you can just download the release image file of the operating system. 
 
 3. **Compile the Rust code:**
     
-    To build the image of the operating system you can use the Makefile just typing
+    To build the image of the operating system you can use the `bootimage` crate and then use the Makefile, just typing
     ```
+    cargo install bootimage
     make image
     ```
 
