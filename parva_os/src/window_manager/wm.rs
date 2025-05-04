@@ -253,14 +253,33 @@ fn handle_input(window: &mut Window, ch: u8) {
             // Process command
             let command = window.input_buffer.clone();
             window.command_history.push(command.clone());
+
+            if command == "clear" {
+                // Reset terminal content to initial state
+                window.contents = vec![
+                    vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width];
+                    window.height - 1
+                ];
+                
+                // Add initial prompt
+                let prompt = b"> ";
+                for (i, &ch) in prompt.iter().enumerate() {
+                    window.contents[0][i] = ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
+                }
+                
+                window.current_line = 0;
+                window.cursor_pos = 2;
+                window.input_buffer.clear();
+                window.needs_redraw = true;
+                return;
+            }
             
-            // Add output line
             let response = if command == "hello" {
                 "Hello World!"
             } else if command == "info" {
                 "ParvaOS version 0.0.2"
             } else if command == "help" {
-                "hello | prints hello world\nhelp  | list of all commands\ninfo  | shows OS version"
+                "clear | to clear the screen\nhello | prints hello world\nhelp  | list of all commands\ninfo  | shows OS version"
             } else if !command.is_empty() {
                 "Unknown command"
             } else {

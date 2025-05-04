@@ -2,6 +2,7 @@
 
 |   COMMAND   |                WHAT THE COMMAND DOES                       |
 | ----------- | ---------------------------------------------------------- |
+|   clear     | to clear the screen                                        |
 |   hello     | to make the OS greet you                                   |
 |   help      | for help about all commands available                      |
 |   info      | to have some info about ParvaOS                            |

@@ -3,6 +3,7 @@
 ## x.x.x (xxxx-xx-xx)
 - **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time
 - **Window movimng**: added the ability to move windows with WASD keys in move_mode
+- **Added `clear` command**
 
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen
