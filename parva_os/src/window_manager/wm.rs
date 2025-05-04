@@ -271,17 +271,35 @@ fn handle_input(window: &mut Window, ch: u8) {
                     window.is_fullscreen = false;
                     window.needs_desktop_redraw = true;
                     
-                    // Reset contents to original size
+                    // Reset contents to original size (keep last N lines)
+                    let target_lines = window.height - 1;
                     let mut new_contents = vec![
                         vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width];
-                        window.height - 1
+                        target_lines
                     ];
-                    // Copy existing content lines (truncate to new width)
-                    for (i, row) in window.contents.iter().enumerate().take(window.height - 1) {
+                    
+                    // Calculate how many lines we can copy from the end
+                    let start_line = window.contents.len().saturating_sub(target_lines);
+                    
+                    // Copy lines while preserving prompt visibility
+                    for (i, row) in window.contents.iter().skip(start_line).enumerate() {
                         let copy_len = row.len().min(window.width);
                         new_contents[i][..copy_len].copy_from_slice(&row[..copy_len]);
+                        
+                        // Always ensure last line has prompt
+                        if i == target_lines - 1 {
+                            let prompt = b"> ";
+                            for (col, &ch) in prompt.iter().enumerate() {
+                                if col < window.width {
+                                    new_contents[i][col] = ScreenChar::new(ch, ColorCode::new(Color::White, Color::Black));
+                                }
+                            }
+                        }
                     }
+                    
                     window.contents = new_contents;
+                    window.current_line = target_lines.saturating_sub(1);
+                    window.cursor_pos = 2 + window.input_buffer.len().min(window.width - 2);
                 } else {
                     // Save current state
                     window.original_x = window.x_pos;
@@ -296,16 +314,21 @@ fn handle_input(window: &mut Window, ch: u8) {
                     window.height = BUFFER_HEIGHT;
                     window.is_fullscreen = true;
                     
-                    // Expand contents to full screen size
+                    // Expand contents while preserving history
                     let mut new_contents = vec![
                         vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); BUFFER_WIDTH];
                         BUFFER_HEIGHT - 1
                     ];
-                    // Copy existing content lines
+                    
+                    // Copy existing lines to bottom of new buffer
+                    let start_line = new_contents.len().saturating_sub(window.contents.len());
                     for (i, row) in window.contents.iter().enumerate() {
-                        new_contents[i][..row.len().min(BUFFER_WIDTH)].copy_from_slice(&row[..row.len().min(BUFFER_WIDTH)]);
+                        let copy_len = row.len().min(BUFFER_WIDTH);
+                        new_contents[start_line + i][..copy_len].copy_from_slice(&row[..copy_len]);
                     }
+                    
                     window.contents = new_contents;
+                    window.current_line = BUFFER_HEIGHT - 2;  // Start at bottom
                 }
                 window.needs_redraw = true;
             },
