@@ -1,7 +1,7 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
 use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, interrupts::INPUT_QUEUE};
 
-const DESKTOP_BG: Color = Color::LightBlue; // Define the background color for the desktop
+const DESKTOP_BG: Color = Color::LightBlue;
 
 type Buffer2D = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
@@ -61,29 +61,17 @@ impl Window {
     }
 
     pub fn draw(&self, buffer: &mut Buffer2D) {
-        // 1. Draw header row
+        // Clear only the previous cursor position
+        self.clear_previous_cursor(buffer);
+
+        // Draw header (only if needed)
         let header_color = ColorCode::new(Color::White, Color::Blue);
         let header_row = self.y_pos;
         for col in 0..self.width {
             buffer[header_row][self.x_pos + col] = ScreenChar::new(b' ', header_color);
         }
-    
-        // Write the name centered in the header
-        let name_bytes = self.name.as_bytes();
-        let start = (self.width.saturating_sub(name_bytes.len())) / 2;
-        for (i, &b) in name_bytes.iter().enumerate() {
-            if start + i < self.width {
-                buffer[header_row][self.x_pos + start + i] = ScreenChar::new(b, header_color);
-            }
-        }
-    
-        // 2. Draw content rows (starting from next line)
-        for row in 0..self.contents.len() {
-            for col in 0..self.width {
-                buffer[self.y_pos + 1 + row][self.x_pos + col] = self.contents[row][col];
-            }
-        }
 
+        // Draw window contents
         for (row_idx, row) in self.contents.iter().enumerate() {
             let screen_row = self.y_pos + 1 + row_idx;
             for (col_idx, &ch) in row.iter().enumerate() {
@@ -93,37 +81,62 @@ impl Window {
                 }
             }
         }
-    
-        // Draw cursor
+
+        // Draw new cursor
         let cursor_row = self.y_pos + 1 + self.current_line;
         let cursor_col = self.x_pos + self.cursor_pos;
         if cursor_row < BUFFER_HEIGHT && cursor_col < BUFFER_WIDTH {
-            buffer[cursor_row][cursor_col] = ScreenChar::new(b'_', 
-                ColorCode::new(Color::White, Color::Black));
+            buffer[cursor_row][cursor_col] = ScreenChar::new(
+                b'_',
+                ColorCode::new(Color::White, Color::Black)
+            );
         }
-    }    
+    }
+
+    fn clear_previous_cursor(&self, buffer: &mut Buffer2D) {
+        let prev_cursor_row = self.y_pos + 1 + self.current_line;
+        let prev_cursor_col = self.x_pos + self.cursor_pos;
+        if prev_cursor_row < BUFFER_HEIGHT && prev_cursor_col < BUFFER_WIDTH {
+            buffer[prev_cursor_row][prev_cursor_col] = ScreenChar::new(
+                self.contents[self.current_line][self.cursor_pos].ascii_character,
+                ColorCode::new(Color::White, Color::Black)
+            );
+        }
+    } 
 }
 
 pub struct Desktop {
     buffer: &'static mut Buffer2D,
+    needs_initial_draw: bool,
 }
 
 impl Desktop {
     pub fn new() -> Self {
-        // Map to VGA buffer in memory
         let buffer = unsafe { &mut *(0xb8000 as *mut Buffer2D) };
-        buffer.copy_from_slice(&background());
-        Self { buffer }
+        let mut desktop = Self {
+            buffer,
+            needs_initial_draw: true,
+        };
+        desktop.initialize_background();
+        desktop
+    }
+
+    fn initialize_background(&mut self) {
+        for row in 0..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                self.buffer[row][col] = ScreenChar {
+                    ascii_character: b' ',
+                    color_code: ColorCode::new(Color::White, DESKTOP_BG),
+                };
+            }
+        }
+        self.needs_initial_draw = false;
     }
 
     pub fn display(&mut self) {
-        // Loop through the entire screen
-        for row in 0..BUFFER_HEIGHT {
-            for col in 0..BUFFER_WIDTH {
-                // Always display a space with white-on-blue
-                self.buffer[row][col].ascii_character = b' ';
-                self.buffer[row][col].color_code = ColorCode::new(Color::White, DESKTOP_BG);
-            }
+        // Only used for initial draw
+        if self.needs_initial_draw {
+            self.initialize_background();
         }
     }
 }
@@ -133,8 +146,11 @@ pub fn gui() -> ! {
     let mut desktop = Desktop::new();
     let mut needs_redraw = true;
 
+    // Initial draw
+    desktop.display();
+    window1.draw(desktop.buffer);
+
     loop {
-        // Process all pending input first
         let mut queue = INPUT_QUEUE.lock();
         let had_input = !queue.is_empty();
         while let Some(ch) = queue.pop_front() {
@@ -142,21 +158,18 @@ pub fn gui() -> ! {
         }
         drop(queue);
 
-        // Only redraw if we had input or periodically for cursor blink
+        // Only redraw window content when needed
         if had_input || needs_redraw {
-            desktop.display();
             window1.draw(desktop.buffer);
             needs_redraw = false;
         }
 
-        // Shorter sleep but maintain cursor blink timing
         sleep(10_000);
         
-        // Force periodic redraw for cursor blink (every 500ms)
         static mut COUNTER: u64 = 0;
         unsafe {
             COUNTER += 1;
-            if COUNTER % 50_000 == 0 { // 50,000 * 10μs = 500ms
+            if COUNTER % 50_000 == 0 {
                 needs_redraw = true;
                 COUNTER = 0;
             }

@@ -1,6 +1,7 @@
 # Changelog
 
 ## x.x.x (xxxx-xx-xx)
+- **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time
 
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen
@@ -12,8 +13,8 @@
 - **VGA Text Mode**: added as TUI
 - **Serial output**: added to make internal tests
 - **CPU Exceptions**: added a way to manage CPU exception without crashing the entire system
-- **Paging**: implemented virtual memory management by introducing paging, enabling memory isolation and efficient use of physical memory.
-- **Heap allocation**: introduced a dynamic memory allocator to manage memory allocation and deallocation at runtime, enabling more flexible and efficient use of system resources.
+- **Paging**: implemented virtual memory management by introducing paging, enabling memory isolation and efficient use of physical memory
+- **Heap allocation**: introduced a dynamic memory allocator to manage memory allocation and deallocation at runtime, enabling more flexible and efficient use of system resources
 - **Shell**: added a basic shell with a cursor, backspace working an `hello` as example command
 - Added `help` and `info` commands
 

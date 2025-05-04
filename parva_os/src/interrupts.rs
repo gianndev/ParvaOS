@@ -1,12 +1,9 @@
-use crate::{gdt, println, hlt_loop, vga::WRITER};
+use crate::{gdt, println, hlt_loop};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin::{self, Mutex};
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
-use alloc::string::String;
 use alloc::collections::VecDeque;
-
-static mut INPUT_BUFFER: String = String::new();
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
