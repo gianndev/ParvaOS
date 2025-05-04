@@ -61,13 +61,14 @@ pub enum QemuExitCode {
     Failed = 0x11,
 }
 
-pub fn exit_qemu(exit_code: QemuExitCode) {
+pub fn exit_qemu(_exit_code: QemuExitCode) {
     use x86_64::instructions::port::Port;
 
     unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
+        let mut port = Port::new(0x604);
+        port.write(0x2000u16); // QEMU shutdown command
     }
+    hlt_loop(); // Halt the CPU after sending the shutdown signal
 }
 
 pub fn hlt_loop() -> ! {

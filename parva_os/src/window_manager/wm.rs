@@ -253,8 +253,10 @@ fn handle_input(window: &mut Window, ch: u8) {
             // Process command
             let command = window.input_buffer.clone();
             window.command_history.push(command.clone());
-
-            if command == "clear" {
+            
+            let response = if command == "hello" {
+                "Hello World!"
+            } else if command == "clear" {
                 // Reset terminal content to initial state
                 window.contents = vec![
                     vec![ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black)); window.width];
@@ -272,14 +274,17 @@ fn handle_input(window: &mut Window, ch: u8) {
                 window.input_buffer.clear();
                 window.needs_redraw = true;
                 return;
-            }
-            
-            let response = if command == "hello" {
-                "Hello World!"
+            } else if command == "shutdown" {
+                crate::exit_qemu(crate::QemuExitCode::Success);
+                crate::hlt_loop();
             } else if command == "info" {
                 "ParvaOS version 0.0.2"
             } else if command == "help" {
-                "clear | to clear the screen\nhello | prints hello world\nhelp  | list of all commands\ninfo  | shows OS version"
+                "hello   | prints hello world\n\
+                 help    | list of commands\n\
+                 info    | shows OS version\n\
+                 clear   | clear terminal\n\
+                 shutdown| power off system"
             } else if !command.is_empty() {
                 "Unknown command"
             } else {
