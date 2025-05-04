@@ -30,6 +30,9 @@ pub struct Window {
     current_line: usize,
     cursor_pos: usize,
     needs_redraw: bool,
+    move_mode: bool,
+    prev_x: usize,
+    prev_y: usize,
 }
 
 impl Window {
@@ -57,10 +60,18 @@ impl Window {
             current_line: 0,
             cursor_pos: 2,  // Start after "> "
             needs_redraw: true,
+            move_mode: false,
+            prev_x: x_pos,
+            prev_y: y_pos,
         }
     }
 
     pub fn draw(&self, buffer: &mut Buffer2D) {
+        // Clear previous position if moved
+        if self.x_pos != self.prev_x || self.y_pos != self.prev_y {
+            self.clear_previous_position(buffer);
+        }
+
         // Clear only the previous cursor position
         self.clear_previous_cursor(buffer);
 
@@ -103,6 +114,45 @@ impl Window {
             );
         }
     } 
+
+    // Add these new methods
+    pub fn move_window(&mut self, dx: isize, dy: isize) {
+        self.prev_x = self.x_pos;
+        self.prev_y = self.y_pos;
+        
+        // Calculate new position with bounds checking
+        self.x_pos = (self.x_pos as isize + dx)
+            .max(0)
+            .min((BUFFER_WIDTH - self.width) as isize) as usize;
+            
+        self.y_pos = (self.y_pos as isize + dy)
+            .max(0)
+            .min((BUFFER_HEIGHT - self.height - 1) as isize) as usize;
+    }
+
+    fn clear_previous_position(&self, buffer: &mut Buffer2D) {
+        // Clear previous header
+        for col in 0..self.width {
+            buffer[self.prev_y][self.prev_x + col] = ScreenChar {
+                ascii_character: b' ',
+                color_code: ColorCode::new(Color::White, DESKTOP_BG),
+            };
+        }
+        
+        // Clear previous content
+        for row in 0..self.height {
+            for col in 0..self.width {
+                let screen_row = self.prev_y + 1 + row;
+                let screen_col = self.prev_x + col;
+                if screen_row < BUFFER_HEIGHT && screen_col < BUFFER_WIDTH {
+                    buffer[screen_row][screen_col] = ScreenChar {
+                        ascii_character: b' ',
+                        color_code: ColorCode::new(Color::White, DESKTOP_BG),
+                    };
+                }
+            }
+        }
+    }
 }
 
 pub struct Desktop {
@@ -158,8 +208,11 @@ pub fn gui() -> ! {
         }
         drop(queue);
 
-        // Only redraw window content when needed
         if had_input || needs_redraw {
+            if window1.move_mode {
+                // Full redraw when moving
+                desktop.display();
+            }
             window1.draw(desktop.buffer);
             needs_redraw = false;
         }
@@ -179,6 +232,22 @@ pub fn gui() -> ! {
 
 fn handle_input(window: &mut Window, ch: u8) {
     window.needs_redraw = true;
+    
+    if window.move_mode {
+        match ch {
+            0x1B => { // Escape key
+                window.move_mode = false;
+                return;
+            },
+            b'w' => window.move_window(0, -1),
+            b's' => window.move_window(0, 1),
+            b'a' => window.move_window(-1, 0),
+            b'd' => window.move_window(1, 0),
+            _ => {},
+        }
+        return;
+    }
+    
     match ch {
         b'\n' => {
             // Process command
@@ -217,6 +286,10 @@ fn handle_input(window: &mut Window, ch: u8) {
                 window.contents[window.current_line][window.cursor_pos] = 
                     ScreenChar::new(b' ', ColorCode::new(Color::White, Color::Black));
             }
+        },
+        0x09 => { // Tab key
+            window.move_mode = true;
+            return;
         },
         _ => {
             // Allow space (0x20) and all printable ASCII characters
