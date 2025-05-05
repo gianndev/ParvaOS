@@ -30,27 +30,30 @@ impl Scheduler {
     fn current_thread(&self) -> &Thread {
         &self.threads[self.current_thread_id]
     }
-    
+
     fn current_thread_mut(&mut self) -> &mut Thread {
         &mut self.threads[self.current_thread_id]
     }
 
     fn switch_to(&mut self, thread_id: usize) {
-        // Save the current thread's state
         let current_thread = self.current_thread_mut();
-        current_thread.program_counter = self.get_current_instruction_pointer();
-    
-        // Restore the new thread's state
+        current_thread.program_counter = Scheduler::get_current_instruction_pointer();
+
         self.current_thread_id = thread_id;
         let new_thread = self.current_thread_mut();
-        self.set_instruction_pointer(new_thread.program_counter);
+        Scheduler::set_instruction_pointer(new_thread.program_counter);
     }
 
     fn schedule(&mut self) {
-        // Find the next thread to run
         let next_thread_id = (self.current_thread_id + 1) % self.threads.len();
-    
-        // Switch to the next thread
         self.switch_to(next_thread_id);
+    }
+
+    fn get_current_instruction_pointer() -> usize {
+        0 // Placeholder
+    }
+
+    fn set_instruction_pointer(_addr: usize) {
+        // Placeholder
     }
 }
