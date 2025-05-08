@@ -394,7 +394,7 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "reboot" {
                 crate::reboot();
             } else if command == "info" {
-                "ParvaOS version 0.0.2"
+                "ParvaOS version 0.0.3"
             } else if command == "help" {
                 "clear    | clear terminal\n\
                  hello    | prints hello world\n\

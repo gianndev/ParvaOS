@@ -1,6 +1,6 @@
 # Changelog
 
-## x.x.x (xxxx-xx-xx)
+## 0.0.3 (2025-05-08)
 - **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time
 - **Window movimng**: added the ability to move windows with WASD keys in move_mode
 - **Added `clear` command**
@@ -8,6 +8,7 @@
 - **Added `reboot` command**
 - **Added Fullscreen**: now when the user is in move mode, pressing SPACE he can toggle fullscreen, and pressing SPACE another time he can make the window small again
 - **Text logic improved**: improved the logic with which commands and text are displayed in the various windows
+- **Completely changed how screen is refreshed**: now only the cells updated are refreshed, to finally solve screen flickering
 
 ## 0.0.2 (2025-05-02)
 - **GUI**: added a window manager that shows windows on screen
