@@ -1,5 +1,6 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
-use crate::{time::sleep, vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, interrupts::INPUT_QUEUE};
+use x86_64::instructions::hlt;
+use crate::{vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, interrupts::INPUT_QUEUE};
 
 const DESKTOP_BG: Color = Color::LightBlue;
 
@@ -172,31 +173,59 @@ impl Window {
 }
 
 pub struct Desktop {
-    buffer: &'static mut Buffer2D,
+    back_buffer: Buffer2D,
+    vga_buffer: &'static mut Buffer2D,
     needs_initial_draw: bool,
 }
 
 impl Desktop {
     pub fn new() -> Self {
-        let buffer = unsafe { &mut *(0xb8000 as *mut Buffer2D) };
-        let mut desktop = Self {
-            buffer,
+        // VGA text-mode starts at 0xb8000
+        let vga_buffer = unsafe { &mut *(0xb8000 as *mut Buffer2D) };
+        // initialize RAM back buffer to spaces
+        let back_buffer = [[
+            ScreenChar {
+                ascii_character: b' ',
+                color_code: ColorCode::new(Color::White, DESKTOP_BG),
+            };
+            BUFFER_WIDTH
+        ]; BUFFER_HEIGHT];
+
+        let mut d = Self {
+            back_buffer,
+            vga_buffer,
             needs_initial_draw: true,
         };
-        desktop.initialize_background();
-        desktop
+        d.initialize_background();
+        d.flush(); // paint the first full frame
+        d
     }
 
+    // Fill back_buffer with desktop background
     fn initialize_background(&mut self) {
         for row in 0..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
-                self.buffer[row][col] = ScreenChar {
+                self.back_buffer[row][col] = ScreenChar {
                     ascii_character: b' ',
                     color_code: ColorCode::new(Color::White, DESKTOP_BG),
                 };
             }
         }
         self.needs_initial_draw = false;
+    }
+
+    // Compare back_buffer to vga_buffer, only write changed cells
+    fn flush(&mut self) {
+        for row in 0..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let new = self.back_buffer[row][col];
+                let old = self.vga_buffer[row][col];
+                if new != old {
+                    // only these writes actually touch VGA RAM
+                    self.vga_buffer[row][col] = new;
+                }
+            }
+        }
     }
 
     pub fn display(&mut self) {
@@ -207,13 +236,15 @@ impl Desktop {
 pub fn gui() -> ! {
     let mut window1 = Window::new("Terminal".to_owned(), 10, 5, 50, 15);
     let mut desktop = Desktop::new();
-    let mut needs_redraw = true;
 
-    // Initial draw
-    desktop.display();
-    window1.draw(desktop.buffer);
+    // initial draw already done by Desktop::new()
+    window1.draw(&mut desktop.back_buffer);
+    desktop.flush();
 
     loop {
+        // halt until next interrupt (keyboard or timer)
+        hlt();
+
         let mut queue = INPUT_QUEUE.lock();
         let had_input = !queue.is_empty();
         while let Some(ch) = queue.pop_front() {
@@ -221,31 +252,25 @@ pub fn gui() -> ! {
         }
         drop(queue);
 
-        if had_input || needs_redraw || window1.needs_desktop_redraw {
-            // Redraw desktop if needed
+        if had_input || window1.needs_desktop_redraw {
+            // if desktop needs full redraw (e.g. on exit fullscreen), repaint background
             if window1.needs_desktop_redraw {
-                desktop.display();
+                desktop.initialize_background();
                 window1.needs_desktop_redraw = false;
             }
-
-            // Existing desktop redraw condition when exiting move mode
-            if !window1.move_mode && (window1.prev_x != window1.x_pos || window1.prev_y != window1.y_pos) {
-                desktop.display();
+            // if window moved, also clear old desktop area
+            if !window1.move_mode
+                && (window1.prev_x != window1.x_pos || window1.prev_y != window1.y_pos)
+            {
+                desktop.initialize_background();
             }
 
-            window1.draw(desktop.buffer);
-            needs_redraw = false;
-        }
+            // render window into back_buffer
+            window1.draw(&mut desktop.back_buffer);
+            // push only diffs to VGA
+            desktop.flush();
 
-        sleep(10_000);
-        
-        static mut COUNTER: u64 = 0;
-        unsafe {
-            COUNTER += 1;
-            if COUNTER % 50_000 == 0 {
-                needs_redraw = true;
-                COUNTER = 0;
-            }
+            window1.needs_redraw = false;
         }
     }
 }
