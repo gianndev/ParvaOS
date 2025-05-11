@@ -18,6 +18,7 @@ pub mod window_manager;
 pub mod parva_fs;
 pub mod process;
 pub mod time;
+pub mod ata;
 
 pub fn init() {
     gdt::init();
