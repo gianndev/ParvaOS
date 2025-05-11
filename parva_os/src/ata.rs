@@ -2,8 +2,12 @@
 
 use core::sync::atomic::spin_loop_hint;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
-use crate::{print, time};
+use crate::{print, println, time};
 use bit_field::BitField;
+use alloc::{string::String, vec::Vec};
+use crate::alloc::string::ToString;
+use lazy_static::lazy_static;
+use spin::Mutex;
 
 #[repr(u16)]
 enum Command {
@@ -256,14 +260,88 @@ impl Bus {
     }
 }
 
-fn init() {
-    // TODO
+// ---------- GLOBAL BUS REGISTRY ----------
+
+lazy_static! {
+    // A thread-safe vector of all ATA buses (primary, secondary, etc.)
+    pub static ref BUSES: Mutex<Vec<Bus>> = Mutex::new(Vec::new());
 }
 
-fn read() {
-    // TODO
+// Given a count of 512-byte sectors, return (value, unit) as MB or GB.
+fn disk_size(sectors: u32) -> (u32, String) {
+    let bytes = sectors * 512;
+    if bytes >> 20 < 1000 {
+        // less than ~1000 MB → report in MB
+        (bytes >> 20, String::from("MB"))
+    } else {
+        // otherwise report in GB
+        (bytes >> 30, String::from("GB"))
+    }
 }
 
-fn write() {
-    // TODO
+// Initialize the ATA subsystem: create primary & secondary buses, then print each drive found.
+pub fn init() {
+    {
+        // Populate the global bus list. Standard I/O ports:
+        //   primary:  0x1F0 base, 0x3F6 control, IRQ 14
+        //   secondary:0x170 base, 0x376 control, IRQ 15
+        let mut buses = BUSES.lock();
+        buses.push(Bus::new(0, 0x1F0, 0x3F6, 14));
+        buses.push(Bus::new(1, 0x170, 0x376, 15));
+    }
+
+    // After registering, enumerate every bus/drive pair and print model/serial/size
+    for (bus, drive, model, serial, size, unit) in list() {
+        println!("ATA {}:{} {} {} ({} {})\n", bus, drive, model, serial, size, unit);
+    }
+}
+
+// Return a Vec of info tuples (bus, drive, model, serial, size, unit) for every present drive.
+pub fn list() -> Vec<(u8, u8, String, String, u32, String)> {
+    let mut result = Vec::new();
+    let mut buses = BUSES.lock();
+
+    for bus_id in 0..buses.len() {
+        for drive in 0..2 {
+            if let Some(identify_buf) = buses[bus_id].identify_drive(drive as u8) {
+                // Extract serial number (words 10..20)
+                let mut serial = String::new();
+                for word in &identify_buf[10..20] {
+                    for &b in &word.to_be_bytes() {
+                        serial.push(b as char);
+                    }
+                }
+                let serial = serial.trim().to_string();
+
+                // Extract model string (words 27..47)
+                let mut model = String::new();
+                for word in &identify_buf[27..47] {
+                    for &b in &word.to_be_bytes() {
+                        model.push(b as char);
+                    }
+                }
+                let model = model.trim().to_string();
+
+                // Extract total sector count from words 60 (low) and 61 (high)
+                let sectors = (identify_buf[61] as u32) << 16 | (identify_buf[60] as u32);
+                let (size, unit) = disk_size(sectors);
+
+                result.push((bus_id as u8, drive as u8, model, serial, size, unit));
+            }
+        }
+    }
+
+    result
+}
+
+// Top-level read: dispatch to the appropriate Bus instance.
+pub fn read(bus: u8, drive: u8, block: u32, buf: &mut [u8]) {
+    let mut buses = BUSES.lock();
+    buses[bus as usize].read(drive, block, buf);
+}
+
+// Top-level write: dispatch to the appropriate Bus instance.
+pub fn write(bus: u8, drive: u8, block: u32, buf: &[u8]) {
+    let mut buses = BUSES.lock();
+    buses[bus as usize].write(drive, block, buf);
 }
