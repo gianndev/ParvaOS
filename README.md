@@ -13,6 +13,9 @@
 - Paging
 - Heap allocation
 - Basic shell
+- Time management (PIT-based system)
+- Driver ATA PIO Mode (Programmed Input/Output)
+- Custom File System ([ParvaFS](doc/ParvaFS.md))
 - Graphical User Interface (GUI)
 
 ## Documentation

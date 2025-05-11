@@ -1,5 +1,10 @@
 # Changelog
 
+## x.x.x (xxxx-xx-xx)
+- **Processes**: added the ability to create multiple processes inside the OS
+- **Added PIT support**: PIT is a Programmable Interval Timer, like a clock simulation
+- **Added ATA driver**: this will be useful to save data permanently on a disk image
+
 ## 0.0.3 (2025-05-08)
 - **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time
 - **Window movimng**: added the ability to move windows with WASD keys in move_mode
