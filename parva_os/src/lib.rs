@@ -16,6 +16,7 @@ pub mod memory;
 pub mod allocator;
 pub mod window_manager;
 pub mod parva_fs;
+pub mod process;
 
 pub fn init() {
     gdt::init();
