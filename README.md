@@ -65,6 +65,9 @@ As I said you can just download the release image file of the operating system. 
 
 The current latest version of ParvaOS is **0.0.3**
 
+## Acknowledgments:
+* A special thanks to Phil-Opp's [blog](https://os.phil-opp.com/) 
+
 ## License
 
 This project is licensed under the terms of the GNU General Public License v3.0 only (GPL-3.0-only).  
