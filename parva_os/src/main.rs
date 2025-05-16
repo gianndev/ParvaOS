@@ -8,6 +8,7 @@ extern crate alloc;
 
 use core::panic::PanicInfo;  // We import this to get information about future panics
 use bootloader::{entry_point, BootInfo};
+use parva_os::{hlt_loop, print};
 
 entry_point!(kernel_main);
 
@@ -24,7 +25,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    parva_os::window_manager::gui();
+    // parva_os::window_manager::gui();
+
+    print!("Hello World{}", "!"); // Just an example of using the print macro
+    hlt_loop()
 }
 
 // This function is called in case of panic

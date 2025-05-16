@@ -14,8 +14,8 @@ $(img):
 	qemu-img create $(img) 32M
 
 image: $(img)
-	cargo build --features qwerty
-	cargo bootimage --features qwerty
+	cargo build
+	cargo bootimage
 	dd conv=notrunc if=$(bin) of=$(img)
 
 opts = -m 32 -cpu max -hda $(img)
