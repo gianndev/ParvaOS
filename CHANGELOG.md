@@ -4,6 +4,7 @@
 - **Processes**: added the ability to create multiple processes inside the OS
 - **Added PIT support**: PIT is a Programmable Interval Timer, like a clock simulation
 - **Added ATA driver**: this will be useful to save data permanently on a disk image
+- **Implemented ParvaFS**: in ParvaOS I have implemented a file system created specifically for this project called ParvaFS
 
 ## 0.0.3 (2025-05-08)
 - **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time

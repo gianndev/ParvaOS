@@ -13,22 +13,8 @@ use parva_os::{hlt_loop, print};
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use parva_os::allocator;
-    use parva_os::memory::{self, BootInfoFrameAllocator};
-    use x86_64::VirtAddr;
-
-    parva_os::init();
-
-    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
-
-    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-
+    parva_os::init(boot_info);
     parva_os::window_manager::gui();
-
-    // print!("Hello World{}", "!"); // Just an example of using the print macro
-    // hlt_loop()
 }
 
 // This function is called in case of panic

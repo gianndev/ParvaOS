@@ -21,13 +21,17 @@ pub mod process;
 pub mod time;
 pub mod ata;
 
-pub fn init() {
+use bootloader::BootInfo;
+
+pub fn init(boot_info: &'static BootInfo) {
     gdt::init();
     interrupts::init();
     unsafe { interrupts::PICS.lock().initialize() };
-    interrupts::set_irq_handler(1, interrupts::keyboard_irq);
-    interrupts::clear_irq_mask(1);
     x86_64::instructions::interrupts::enable();
+
+    memory::init(boot_info);
+    ata::init();
+    parva_fs::ParvaFS::init();
 }
 
 #[alloc_error_handler]
@@ -112,10 +116,9 @@ use x86_64::structures::idt;
 #[cfg(test)]
 entry_point!(test_kernel_main);
 
-// Entry point for `cargo xtest`
 #[cfg(test)]
-fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
-    init();
+fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
+    init(boot_info);
     test_main();
     hlt_loop();
 }

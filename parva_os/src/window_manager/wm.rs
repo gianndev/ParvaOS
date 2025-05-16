@@ -391,6 +391,9 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "shutdown" {
                 crate::exit_qemu(crate::QemuExitCode::Success);
                 crate::hlt_loop();
+            } else if command == "install" {
+                crate::parva_fs::ParvaFS::format(0, 0);
+                "ParvaFS formatted successfully"
             } else if command == "reboot" {
                 crate::reboot();
             } else if command == "info" {
