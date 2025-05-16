@@ -43,15 +43,21 @@ As I said you can just download the release image file of the operating system. 
     cd ParvaOS
     ```
 
-3. **Compile the Rust code:**
-    
-    To build the image of the operating system you can use the `bootimage` crate and then use the Makefile, just typing
+3. **Install the needed crates**
+
+    To build the image of the operating system there are some stuff you need to have installed. Just type the following command (it uses the makefile) for a complete setup
     ```
-    cargo install bootimage
+    make setup
+    ```
+
+4. **Compile the Rust code:**
+    
+    To build the image of the operating system you can use the Makefile just typing
+    ```
     make image
     ```
 
-4. **Run ParvaOS:**
+5. **Run ParvaOS:**
     
     Once the image file is created, you can run it with QEMU typing in the terminal
 

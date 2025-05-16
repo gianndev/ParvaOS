@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := all
 
 # Final target to run everything
-all: clean image run
+all: setup clean image run
 
 .PHONY: image run
 .EXPORT_ALL_VARIABLES:
@@ -14,8 +14,8 @@ $(img):
 	qemu-img create $(img) 32M
 
 image: $(img)
-	cargo build
-	cargo bootimage
+	cargo build --features qwerty
+	cargo bootimage --features qwerty
 	dd conv=notrunc if=$(bin) of=$(img)
 
 opts = -m 32 -cpu max -hda $(img)
@@ -25,6 +25,9 @@ run:
 
 clean:
 	rm $(img)
+
+setup:
+	cargo install bootimage
 
 test:
 	cargo test
