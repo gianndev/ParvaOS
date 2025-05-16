@@ -2,9 +2,9 @@
 .DEFAULT_GOAL := all
 
 # Final target to run everything
-all: setup clean image run
+all: clean image run
 
-.PHONY: image run
+.PHONY: setup clean image run
 .EXPORT_ALL_VARIABLES:
 
 bin = target/x86_64-parva_os/debug/bootimage-parva_os.bin

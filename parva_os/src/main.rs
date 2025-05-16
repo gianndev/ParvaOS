@@ -25,10 +25,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    // parva_os::window_manager::gui();
+    parva_os::window_manager::gui();
 
-    print!("Hello World{}", "!"); // Just an example of using the print macro
-    hlt_loop()
+    // print!("Hello World{}", "!"); // Just an example of using the print macro
+    // hlt_loop()
 }
 
 // This function is called in case of panic

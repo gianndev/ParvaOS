@@ -1,125 +1,156 @@
-use crate::{gdt, println, hlt_loop};
+use crate::print;
 use lazy_static::lazy_static;
-use pic8259::ChainedPics;
-use spin::{self, Mutex};
-use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
+use spin::Mutex;
+use x86_64::instructions::interrupts;
+use x86_64::instructions::port::Port;
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use pic8259_simple::ChainedPics;
 use alloc::collections::VecDeque;
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-pub enum InterruptIndex {
-    Timer = PIC_1_OFFSET,
-    Keyboard,
-}
+pub static PICS: Mutex<ChainedPics> = Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
 
-impl InterruptIndex {
-    fn as_u8(self) -> u8 {
-        self as u8
-    }
-
-    fn as_usize(self) -> usize {
-        usize::from(self.as_u8())
-    }
-}
-
-pub static PICS: spin::Mutex<ChainedPics> =
-    spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
+const PIC1: u16 = 0x21;
+const PIC2: u16 = 0xA1;
 
 lazy_static! {
+    /// Global keyboard‐scancode queue
+    pub static ref INPUT_QUEUE: Mutex<VecDeque<u8>> =
+        Mutex::new(VecDeque::new());
+}
+
+
+// Translate IRQ into system interrupt
+fn interrupt_index(irq: u8) -> u8 {
+    PIC_1_OFFSET + irq
+}
+
+fn default_handler() {
+    return;
+}
+
+macro_rules! irq_handler {
+    ($handler:ident, $irq:expr) => {
+        pub extern "x86-interrupt" fn $handler(_stack_frame: &mut InterruptStackFrame) {
+            let handlers = IRQ_HANDLERS.lock();
+            handlers[$irq]();
+            unsafe { PICS.lock().notify_end_of_interrupt(interrupt_index($irq)); }
+        }
+    };
+}
+
+irq_handler!(irq0_handler, 0);
+irq_handler!(irq1_handler, 1);
+irq_handler!(irq2_handler, 2);
+irq_handler!(irq3_handler, 3);
+irq_handler!(irq4_handler, 4);
+irq_handler!(irq5_handler, 5);
+irq_handler!(irq6_handler, 6);
+irq_handler!(irq7_handler, 7);
+irq_handler!(irq8_handler, 8);
+irq_handler!(irq9_handler, 9);
+irq_handler!(irq10_handler, 10);
+irq_handler!(irq11_handler, 11);
+irq_handler!(irq12_handler, 12);
+irq_handler!(irq13_handler, 13);
+irq_handler!(irq14_handler, 14);
+irq_handler!(irq15_handler, 15);
+
+lazy_static! {
+    pub static ref IRQ_HANDLERS: Mutex<[fn(); 16]> = Mutex::new([default_handler; 16]);
+
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
-        idt.page_fault.set_handler_fn(page_fault_handler);
         unsafe {
-            idt.double_fault
-                .set_handler_fn(double_fault_handler)
-                .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
+            idt.double_fault.set_handler_fn(double_fault_handler).set_stack_index(crate::gdt::DOUBLE_FAULT_IST_INDEX);
         }
-        idt[InterruptIndex::Timer.as_usize()].set_handler_fn(timer_interrupt_handler);
-        idt[InterruptIndex::Keyboard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
+        idt[interrupt_index(0) as usize].set_handler_fn(irq0_handler);
+        idt[interrupt_index(1) as usize].set_handler_fn(irq1_handler);
+        idt[interrupt_index(2) as usize].set_handler_fn(irq2_handler);
+        idt[interrupt_index(3) as usize].set_handler_fn(irq3_handler);
+        idt[interrupt_index(4) as usize].set_handler_fn(irq4_handler);
+        idt[interrupt_index(5) as usize].set_handler_fn(irq5_handler);
+        idt[interrupt_index(6) as usize].set_handler_fn(irq6_handler);
+        idt[interrupt_index(7) as usize].set_handler_fn(irq7_handler);
+        idt[interrupt_index(8) as usize].set_handler_fn(irq8_handler);
+        idt[interrupt_index(9) as usize].set_handler_fn(irq9_handler);
+        idt[interrupt_index(10) as usize].set_handler_fn(irq10_handler);
+        idt[interrupt_index(11) as usize].set_handler_fn(irq11_handler);
+        idt[interrupt_index(12) as usize].set_handler_fn(irq12_handler);
+        idt[interrupt_index(13) as usize].set_handler_fn(irq13_handler);
+        idt[interrupt_index(14) as usize].set_handler_fn(irq14_handler);
+        idt[interrupt_index(15) as usize].set_handler_fn(irq15_handler);
         idt
     };
 }
 
-pub fn init_idt() {
+pub fn init() {
     IDT.load();
 }
 
-extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
-    println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+pub fn set_irq_handler(irq: u8, handler: fn()) {
+    interrupts::without_interrupts(|| {
+        let mut handlers = IRQ_HANDLERS.lock();
+        handlers[irq as usize] = handler;
+
+        clear_irq_mask(irq);
+    });
 }
 
-extern "x86-interrupt" fn page_fault_handler(
-    stack_frame: InterruptStackFrame,
-    error_code: PageFaultErrorCode,
-) {
-    use x86_64::registers::control::Cr2;
-
-    println!("EXCEPTION: PAGE FAULT");
-    println!("Accessed Address: {:?}", Cr2::read());
-    println!("Error Code: {:?}", error_code);
-    println!("{:#?}", stack_frame);
-    hlt_loop();
-}
-
-extern "x86-interrupt" fn double_fault_handler(
-    stack_frame: InterruptStackFrame,
-    _error_code: u64,
-) -> ! {
-    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
-}
-
-extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
+pub fn set_irq_mask(irq: u8) {
+    let mut port: Port<u8> = Port::new(if irq < 8 { PIC1 } else { PIC2 });
     unsafe {
-        PICS.lock()
-            .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+        let value = port.read() | (1 << (if irq < 8 { irq } else { irq - 8 }));
+        port.write(value);
     }
 }
 
-lazy_static! {
-    pub static ref INPUT_QUEUE: Mutex<VecDeque<u8>> = Mutex::new(VecDeque::new());
+pub fn clear_irq_mask(irq: u8) {
+    let mut port: Port<u8> = Port::new(if irq < 8 { PIC1 } else { PIC2 });
+    unsafe {
+        let value = port.read() & !(1 << if irq < 8 { irq } else { irq - 8 });
+        port.write(value);
+    }
 }
 
-// Modify the keyboard handler to push characters into INPUT_QUEUE
-extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
-    use spin::Mutex;
+pub fn keyboard_irq() {
+    use pc_keyboard::{DecodedKey, HandleControl, Keyboard, layouts, ScancodeSet1};
     use x86_64::instructions::port::Port;
+    use alloc::collections::VecDeque;
 
+    // singleton keyboard state
     lazy_static! {
-        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
-            Mutex::new(Keyboard::new(
-                ScancodeSet1::new(),
-                layouts::Us104Key,
-                HandleControl::Ignore
-            ));
+        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = Mutex::new(Keyboard::new(
+            layouts::Us104Key,
+            ScancodeSet1,
+            HandleControl::MapLettersToUnicode
+        ));
     }
 
     let mut keyboard = KEYBOARD.lock();
     let mut port = Port::new(0x60);
-
     let scancode: u8 = unsafe { port.read() };
-    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-        if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                DecodedKey::Unicode(character) => {
-                    let mut queue = INPUT_QUEUE.lock();
-                    match character {
-                        '\n' => queue.push_back(b'\n'),
-                        '\x08' => queue.push_back(0x08),
-                        _ => queue.push_back(character as u8),
-                    }
-                },
-                DecodedKey::RawKey(_) => {},
+    if let Ok(Some(event)) = keyboard.add_byte(scancode) {
+        if let Some(key) = keyboard.process_keyevent(event) {
+            if let DecodedKey::Unicode(chr) = key {
+                let mut q = INPUT_QUEUE.lock();
+                match chr {
+                    '\n' => q.push_back(b'\n'),
+                    '\x08' => q.push_back(0x08),
+                    c => q.push_back(c as u8),
+                }
             }
         }
     }
+}
 
-    unsafe {
-        PICS.lock()
-            .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
-    }
+extern "x86-interrupt" fn breakpoint_handler(stack_frame: &mut InterruptStackFrame) {
+    print!("EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
+}
+
+extern "x86-interrupt" fn double_fault_handler(stack_frame: &mut InterruptStackFrame, _error_code: u64) -> ! {
+    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }

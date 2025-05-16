@@ -4,6 +4,7 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
+#![feature(alloc_error_handler)]
 
 use core::panic::PanicInfo;
 extern crate alloc;
@@ -22,9 +23,16 @@ pub mod ata;
 
 pub fn init() {
     gdt::init();
-    interrupts::init_idt();
+    interrupts::init();
     unsafe { interrupts::PICS.lock().initialize() };
+    interrupts::set_irq_handler(1, interrupts::keyboard_irq);
+    interrupts::clear_irq_mask(1);
     x86_64::instructions::interrupts::enable();
+}
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
 }
 
 pub trait Testable {
@@ -99,6 +107,7 @@ pub fn hlt_loop() -> ! {
 // Entry point for `cargo xtest`
 #[cfg(test)]
 use bootloader::{entry_point, BootInfo};
+use x86_64::structures::idt;
 
 #[cfg(test)]
 entry_point!(test_kernel_main);

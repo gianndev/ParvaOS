@@ -3,20 +3,23 @@ name = "parva_os"
 description = "ParvaOS is an Operating System created completely in Rust 🦀"
 version = "0.0.3"
 authors = ["Francesco Giannice <giannice.developer@gmail.com>"]
-edition = "2021"
+edition = "2018"
 readme = "README.md"
 license = "GPL-3.0-only"
 
 [dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory"]}
 volatile = "0.2.6"
-spin = "0.5.2"
-x86_64 = "0.14.2"
-uart_16550 = "0.2.0"
-pic8259 = "0.10.1"
-pc-keyboard = "0.7.0"
-linked_list_allocator = "0.9.0"
+spin = "0.7.0"
+x86_64 = "0.12.3"
+uart_16550 = "0.2.7"
+pic8259_simple = "0.2.0"
+pc-keyboard = "0.5.1"
+linked_list_allocator = "0.8.4"
 bit_field = "0.10.0"
+
+[package.metadata.bootloader]
+physical-memory-offset = "0x0000f00000000000"
 
 [dependencies.lazy_static]
 version = "1.0"
