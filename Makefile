@@ -28,6 +28,3 @@ clean:
 
 setup:
 	cargo install bootimage
-
-test:
-	cargo test

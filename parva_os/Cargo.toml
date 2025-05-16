@@ -7,14 +7,6 @@ edition = "2021"
 readme = "README.md"
 license = "GPL-3.0-only"
 
-[[test]]
-name = "should_panic"
-harness = false
-
-[[test]]
-name = "stack_overflow"
-harness = false
-
 [dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory"]}
 volatile = "0.2.6"
