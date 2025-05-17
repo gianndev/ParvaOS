@@ -7,6 +7,11 @@ edition = "2018"
 readme = "README.md"
 license = "GPL-3.0-only"
 
+[features]
+default = ["vga", "qwerty"]
+vga = []
+qwerty = []
+
 [dependencies]
 bootloader = { version = "0.9", features = ["map_physical_memory"]}
 volatile = "0.2.6"
@@ -17,17 +22,11 @@ pic8259_simple = "0.2.0"
 pc-keyboard = "0.5.1"
 linked_list_allocator = "0.8.4"
 bit_field = "0.10.0"
+vte = "0.8.0"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 
 [package.metadata.bootloader]
 physical-memory-offset = "0x0000f00000000000"
 
-[dependencies.lazy_static]
-version = "1.0"
-features = ["spin_no_std"]
-
 [package.metadata.bootimage]
-test-args = [
-    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio",
-    "-display", "none"
-]
-test-success-exit-code = 33 
+test-success-exit-code = 33 # (0x10 << 1) | 1

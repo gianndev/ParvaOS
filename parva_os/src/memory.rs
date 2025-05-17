@@ -2,7 +2,6 @@ use bootloader::bootinfo::{BootInfo, MemoryMap, MemoryRegionType};
 use x86_64::structures::paging::mapper::MapperAllSizes;
 use x86_64::structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB};
 use x86_64::{PhysAddr, VirtAddr};
-use crate::print;
 
 // NOTE: This static is mutable but it'll be changed only once during initialization
 static mut PHYS_MEM_OFFSET: u64 = 0;
@@ -13,9 +12,9 @@ pub fn init(boot_info: &'static BootInfo) {
         let start_addr = region.range.start_addr();
         let end_addr = region.range.end_addr();
         memory_size += end_addr - start_addr;
-        print!("MEM [{:#016X}-{:#016X}] {:?}\n", start_addr, end_addr, region.region_type);
+        // print!("MEM [{:#016X}-{:#016X}] {:?}\n", start_addr, end_addr, region.region_type);
     }
-    print!("MEM {} KB\n", memory_size >> 10);
+    // print!("MEM {} KB\n", memory_size >> 10);
 
     unsafe { PHYS_MEM_OFFSET = boot_info.physical_memory_offset; }
 

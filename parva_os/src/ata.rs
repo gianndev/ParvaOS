@@ -2,7 +2,7 @@
 
 use core::sync::atomic::spin_loop_hint;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
-use crate::{print, println, time};
+use crate::time;
 use bit_field::BitField;
 use alloc::{string::String, vec::Vec};
 use crate::alloc::string::ToString;
@@ -156,15 +156,16 @@ impl Bus {
         }
     }
 
+    // Uncomment to print
     // Debug helper: print the current drive and status register values
-    #[allow(dead_code)]
-    fn debug(&mut self) {
-        self.wait();
-        unsafe {
-            print!("drive register: 0b{:08b}\n", self.drive_register.read());
-            print!("status:         0b{:08b}\n", self.status_register.read());
-        }
-    }
+    // #[allow(dead_code)]
+    // fn debug(&mut self) {
+    //     self.wait();
+    //     unsafe {
+    //         print!("drive register: 0b{:08b}\n", self.drive_register.read());
+    //         print!("status:         0b{:08b}\n", self.status_register.read());
+    //     }
+    // }
 
     // Prepare the bus to read/write one LBA block:
     // - select drive
@@ -290,10 +291,11 @@ pub fn init() {
         buses.push(Bus::new(1, 0x170, 0x376, 15));
     }
 
+    // Uncomment to print
     // After registering, enumerate every bus/drive pair and print model/serial/size
-    for (bus, drive, model, serial, size, unit) in list() {
-        println!("ATA {}:{} {} {} ({} {})\n", bus, drive, model, serial, size, unit);
-    }
+    // for (bus, drive, model, serial, size, unit) in list() {
+    //     println!("ATA {}:{} {} {} ({} {})\n", bus, drive, model, serial, size, unit);
+    // }
 }
 
 // Return a Vec of info tuples (bus, drive, model, serial, size, unit) for every present drive.

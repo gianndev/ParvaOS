@@ -20,6 +20,7 @@ pub mod parva_fs;
 pub mod process;
 pub mod time;
 pub mod ata;
+pub mod keyboard;
 
 use bootloader::BootInfo;
 
@@ -29,6 +30,7 @@ pub fn init(boot_info: &'static BootInfo) {
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
 
+    keyboard::init();
     memory::init(boot_info);
     ata::init();
     parva_fs::ParvaFS::init();
@@ -62,12 +64,6 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
-pub fn test_panic_handler(info: &PanicInfo) -> ! {
-    serial_println!("[failed]\n");
-    serial_println!("Error: {}\n", info);
-    exit_qemu(QemuExitCode::Failed);
-    loop {}
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -108,10 +104,11 @@ pub fn hlt_loop() -> ! {
     }
 }
 
-// Entry point for `cargo xtest`
 #[cfg(test)]
-use bootloader::{entry_point, BootInfo};
-use x86_64::structures::idt;
+use bootloader::entry_point;
+
+#[cfg(test)]
+use core::panic::PanicInfo;
 
 #[cfg(test)]
 entry_point!(test_kernel_main);
@@ -126,5 +123,15 @@ fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    test_panic_handler(info)
+    let csi_color = kernel::console::Style::color("LightRed");
+    let csi_reset = kernel::console::Style::reset();
+    print!("{}failed{}\n\n", csi_color, csi_reset);
+    print!("{}\n\n", info);
+    exit_qemu(QemuExitCode::Failed);
+    hlt_loop();
+}
+
+#[test_case]
+fn trivial_assertion() {
+    assert_eq!(1, 1);
 }

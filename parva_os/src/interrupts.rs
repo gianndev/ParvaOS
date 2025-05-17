@@ -16,11 +16,10 @@ const PIC1: u16 = 0x21;
 const PIC2: u16 = 0xA1;
 
 lazy_static! {
-    /// Global keyboard‐scancode queue
+    // Global keyboard‐scancode queue
     pub static ref INPUT_QUEUE: Mutex<VecDeque<u8>> =
         Mutex::new(VecDeque::new());
 }
-
 
 // Translate IRQ into system interrupt
 fn interrupt_index(irq: u8) -> u8 {
@@ -113,37 +112,6 @@ pub fn clear_irq_mask(irq: u8) {
     unsafe {
         let value = port.read() & !(1 << if irq < 8 { irq } else { irq - 8 });
         port.write(value);
-    }
-}
-
-pub fn keyboard_irq() {
-    use pc_keyboard::{DecodedKey, HandleControl, Keyboard, layouts, ScancodeSet1};
-    use x86_64::instructions::port::Port;
-    use alloc::collections::VecDeque;
-
-    // singleton keyboard state
-    lazy_static! {
-        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = Mutex::new(Keyboard::new(
-            layouts::Us104Key,
-            ScancodeSet1,
-            HandleControl::MapLettersToUnicode
-        ));
-    }
-
-    let mut keyboard = KEYBOARD.lock();
-    let mut port = Port::new(0x60);
-    let scancode: u8 = unsafe { port.read() };
-    if let Ok(Some(event)) = keyboard.add_byte(scancode) {
-        if let Some(key) = keyboard.process_keyevent(event) {
-            if let DecodedKey::Unicode(chr) = key {
-                let mut q = INPUT_QUEUE.lock();
-                match chr {
-                    '\n' => q.push_back(b'\n'),
-                    '\x08' => q.push_back(0x08),
-                    c => q.push_back(c as u8),
-                }
-            }
-        }
     }
 }
 

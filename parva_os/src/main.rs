@@ -8,32 +8,21 @@ extern crate alloc;
 
 use core::panic::PanicInfo;  // We import this to get information about future panics
 use bootloader::{entry_point, BootInfo};
-use parva_os::{hlt_loop, print};
+use parva_os::{hlt_loop, print, println};
 
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     parva_os::init(boot_info);
     parva_os::window_manager::gui();
+
+    // Uncomment the following lines to have terminal mode instead of GUI mode (and comment the GUI line above)
+    // println!("Hello from Parva OS!");
+    // parva_os::hlt_loop();
 }
 
-// This function is called in case of panic
-#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    use parva_os::println;
-
-    println!("{}", info);
-    loop {}
-}
-
-#[cfg(test)]
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    parva_os::test_panic_handler(info)
-}
-
-#[test_case]
-fn trivial_assertion() {
-    assert_eq!(1, 1);
+    print!("{}\n", info);
+    loop{}
 }
