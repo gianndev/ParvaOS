@@ -234,7 +234,7 @@ impl Desktop {
 }
 
 pub fn gui() -> ! {
-    let mut window1 = Window::new("Terminal".to_owned(), 10, 5, 50, 15);
+    let mut window1 = Window::new("Terminal".to_owned(), 5, 2, 65, 18);
     let mut desktop = Desktop::new();
 
     // initial draw already done by Desktop::new()
@@ -397,12 +397,13 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "reboot" {
                 crate::reboot();
             } else if command == "info" {
-                "ParvaOS version 0.0.3"
+                "ParvaOS version 0.0.4"
             } else if command == "help" {
                 "clear    | clear terminal\n\
                  hello    | prints hello world\n\
                  help     | list of commands\n\
                  info     | shows OS version\n\
+                 install  | format ParvaFS\n\
                  reboot   | restart system\n\
                  shutdown | power off system\n\
                  [TAB]    | enter move mode (move with WASD)\n\

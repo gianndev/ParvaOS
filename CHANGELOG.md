@@ -1,6 +1,6 @@
 # Changelog
 
-## x.x.x (xxxx-xx-xx)
+## 0.0.4 (xxxx-xx-xx)
 - **Processes**: added the ability to create multiple processes inside the OS
 - **Added PIT support**: PIT is a Programmable Interval Timer, like a clock simulation
 - **Added ATA driver**: this will be useful to save data permanently on a disk image
