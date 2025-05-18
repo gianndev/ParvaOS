@@ -1,17 +1,18 @@
 ## **LIST OF COMMANDS:**
 
-|   COMMAND           |                WHAT THE COMMAND DOES                       |
-| ------------------- | ---------------------------------------------------------- |
-|   clear             | to clear the screen                                        |
-|   crfile <filename> | to create a file with a given name                         |
-|   hello             | to make the OS greet you                                   |
-|   help              | for help about all commands available                      |
-|   info              | to have some info about ParvaOS                            |
-|   install           | to format the disk with ParvaFS (the official file system) |
-|   list              | to have a list of all files and folders                    |
-|   read <filename>   | to read the text content of a file                         |
-|   reboot            | to reboot the operating system                             |
-|   shutdown          | to power off the operating system                          |
+|   COMMAND                   |                WHAT THE COMMAND DOES                       |
+| --------------------------- | ---------------------------------------------------------- |
+|   clear                     | to clear the screen                                        |
+|   crfile <filename>         | to create a file with a given name                         |
+|   edit <filename> <content> | to edit (for now overwrite) the content of a file          |
+|   hello                     | to make the OS greet you                                   |
+|   help                      | for help about all commands available                      |
+|   info                      | to have some info about ParvaOS                            |
+|   install                   | to format the disk with ParvaFS (the official file system) |
+|   list                      | to have a list of all files and folders                    |
+|   read <filename>           | to read the text content of a file                         |
+|   reboot                    | to reboot the operating system                             |
+|   shutdown                  | to power off the operating system                          |
 
 ## **Instructions for use 📖**
 

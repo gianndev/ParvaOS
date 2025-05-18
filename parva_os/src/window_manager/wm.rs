@@ -1,3 +1,5 @@
+use core::num;
+
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
 use x86_64::instructions::hlt;
 use crate::{
@@ -423,6 +425,29 @@ fn handle_input(window: &mut Window, ch: u8) {
                     window.input_buffer.clear();
                     window.cursor_pos = 2;
                     return;
+                } else if cmd == "edit" {
+                    // Edit (overwrite) file contents
+                    if parts.len() >= 3 {
+                        let filename = parts[1];
+                        // join all remaining args as the new content
+                        let new_content = parts[2..].join(" ");
+                        if let Some(mut file) = File::open(filename) {
+                            // write() takes a &[u8] and returns Result<(), ()>
+                            if file.write(new_content.as_bytes()).is_ok() {
+                                add_output_line(window, "File updated");
+                            } else {
+                                add_output_line(window, "Error writing file");
+                            }
+                        } else {
+                            add_output_line(window, "File not found");
+                        }
+                    } else {
+                        add_output_line(window, "Usage: edit <filename> <new content>");
+                    }
+                    add_new_line(window);
+                    window.input_buffer.clear();
+                    window.cursor_pos = 2;
+                    return;
                 }
             }
 
@@ -460,6 +485,7 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "help" {
                 "clear    | clear terminal\n\
                  crfile   | create file\n\
+                 edit     | edit (overwrite) file\n\
                  hello    | prints hello world\n\
                  help     | list of commands\n\
                  info     | shows OS version\n\
