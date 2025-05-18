@@ -1,14 +1,16 @@
 ## **LIST OF COMMANDS:**
 
-|   COMMAND   |                WHAT THE COMMAND DOES                       |
-| ----------- | ---------------------------------------------------------- |
-|   clear     | to clear the screen                                        |
-|   hello     | to make the OS greet you                                   |
-|   help      | for help about all commands available                      |
-|   info      | to have some info about ParvaOS                            |
-|   install   | to format the disk with ParvaFS (the official file system) |
-|   reboot    | to reboot the operating system                             |
-|   shutdown  | to power off the operating system                          |
+|   COMMAND           |                WHAT THE COMMAND DOES                       |
+| ------------------- | ---------------------------------------------------------- |
+|   clear             | to clear the screen                                        |
+|   crfile <filename> | to create a file with a given name                         |
+|   hello             | to make the OS greet you                                   |
+|   help              | for help about all commands available                      |
+|   info              | to have some info about ParvaOS                            |
+|   install           | to format the disk with ParvaFS (the official file system) |
+|   list              | to have a list of all files and folders                    |
+|   reboot            | to reboot the operating system                             |
+|   shutdown          | to power off the operating system                          |
 
 ## **Instructions for use 📖**
 

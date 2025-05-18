@@ -1,6 +1,10 @@
 use alloc::{borrow::ToOwned, string::String, vec::Vec, vec};
 use x86_64::instructions::hlt;
-use crate::{vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, interrupts::INPUT_QUEUE};
+use crate::{
+    vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, 
+    interrupts::INPUT_QUEUE, 
+    parva_fs::ParvaFS::{Dir, FileType}
+};
 
 const DESKTOP_BG: Color = Color::LightBlue;
 
@@ -367,7 +371,44 @@ fn handle_input(window: &mut Window, ch: u8) {
             // Process command
             let command = window.input_buffer.clone();
             window.command_history.push(command.clone());
-            
+
+            // Split command and arguments
+            let parts: Vec<&str> = command.split_whitespace().collect();
+            if let Some(&cmd) = parts.get(0) {
+                if cmd == "crfile" {
+                    // Create file command
+                    if let Some(&filename) = parts.get(1) {
+                        let dir = Dir::root();
+                        if dir.create_file(filename).is_some() {
+                            add_output_line(window, "File created");
+                        } else {
+                            add_output_line(window, "Error creating file");
+                        }
+                    } else {
+                        add_output_line(window, "Usage: crfile <filename>");
+                    }
+                    add_new_line(window);
+                    window.input_buffer.clear();
+                    window.cursor_pos = 2;
+                    return;
+                } else if cmd == "list" {
+                    // List directory contents
+                    let dir = Dir::root();
+                    for entry in dir.read() {
+                        let mut name = entry.name();
+                        if entry.is_dir() {
+                            name.push('/');
+                        }
+                        add_output_line(window, &name);
+                    }
+                    add_new_line(window);
+                    window.input_buffer.clear();
+                    window.cursor_pos = 2;
+                    return;
+                }
+            }
+
+            // Handle other commands
             let response = if command == "hello" {
                 "Hello World!"
             } else if command == "clear" {
