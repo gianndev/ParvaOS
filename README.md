@@ -16,6 +16,7 @@
 - Time management (PIT-based system)
 - Driver ATA PIO Mode (Programmed Input/Output)
 - Custom File System ([ParvaFS](doc/ParvaFS.md))
+- Ability to save files on disk
 - Graphical User Interface (GUI)
 
 ## Documentation
