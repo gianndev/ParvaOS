@@ -9,6 +9,7 @@
 |   info              | to have some info about ParvaOS                            |
 |   install           | to format the disk with ParvaFS (the official file system) |
 |   list              | to have a list of all files and folders                    |
+|   read <filename>   | to read the text content of a file                         |
 |   reboot            | to reboot the operating system                             |
 |   shutdown          | to power off the operating system                          |
 

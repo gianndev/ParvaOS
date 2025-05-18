@@ -7,6 +7,7 @@
 - **Implemented ParvaFS**: in ParvaOS I have implemented a file system created specifically for this project called ParvaFS
 - **Added `install` command**: useful to format the .img file with the ParvaFS file system
 - **Added `crfile` and `list` commands**: useful to create a file with a give name and have a list of all existing files
+- **Added `read` command**: needed to read the text content of a file
 
 ## 0.0.3 (2025-05-08)
 - **Removed flickering**: now the GUI updates only the changed part of the screen and not the whole screen every time

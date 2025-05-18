@@ -3,7 +3,7 @@ use x86_64::instructions::hlt;
 use crate::{
     vga::{Color, ColorCode, ScreenChar, BUFFER_HEIGHT, BUFFER_WIDTH}, 
     interrupts::INPUT_QUEUE, 
-    parva_fs::ParvaFS::{Dir, FileType}
+    parva_fs::ParvaFS::{Dir, FileType, File}
 };
 
 const DESKTOP_BG: Color = Color::LightBlue;
@@ -405,6 +405,24 @@ fn handle_input(window: &mut Window, ch: u8) {
                     window.input_buffer.clear();
                     window.cursor_pos = 2;
                     return;
+                } else if cmd == "read" {
+                    // Read file contents
+                    if let Some(&filename) = parts.get(1) {
+                        if let Some(file) = File::open(filename) {
+                            let content = file.read_to_string();
+                            for line in content.split('\n') {
+                                add_output_line(window, line);
+                            }
+                        } else {
+                            add_output_line(window, "File not found");
+                        }
+                    } else {
+                        add_output_line(window, "Usage: read <filename>");
+                    }
+                    add_new_line(window);
+                    window.input_buffer.clear();
+                    window.cursor_pos = 2;
+                    return;
                 }
             }
 
@@ -441,10 +459,13 @@ fn handle_input(window: &mut Window, ch: u8) {
                 "ParvaOS version 0.0.4"
             } else if command == "help" {
                 "clear    | clear terminal\n\
+                 crfile   | create file\n\
                  hello    | prints hello world\n\
                  help     | list of commands\n\
                  info     | shows OS version\n\
                  install  | format ParvaFS\n\
+                 list     | list files in root\n\
+                 read     | read file\n\
                  reboot   | restart system\n\
                  shutdown | power off system\n\
                  [TAB]    | enter move mode (move with WASD)\n\
