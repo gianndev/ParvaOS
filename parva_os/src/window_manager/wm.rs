@@ -478,6 +478,30 @@ fn handle_input(window: &mut Window, ch: u8) {
             } else if command == "install" {
                 crate::parva_fs::ParvaFS::format(0, 0);
                 "ParvaFS formatted successfully"
+            } else if command == "neofetch" {
+                // ASCII art: big “P” in a circle
+                let art = r"
+      dMMMMMMMMMMMMMhMd
+     dMM              hMd
+    dMM  NMMNNNMMdyo   hMd
+   dMM   NM+   oomMMN   hMd
+  dMM    NM+     `oMN    hMd
+ dMM     NM+     `oMN     hMd
+dMM      NM+-oooodMMN      hMd
+ dMM     NM+/MMMMdhs      hMd
+  dMM    NM+             hMd
+   dMM   NM+            hMd
+    dMM  NM+           hMd
+     dMM              hMd
+      dMMMMMMMMMMMMMMhMd
+                    ";
+                for line in art.lines() {
+                    add_output_line(window, line);
+                }
+                add_new_line(window);
+                window.input_buffer.clear();
+                window.cursor_pos = 2;
+                return;
             } else if command == "reboot" {
                 crate::reboot();
             } else if command == "help" {
@@ -488,6 +512,7 @@ fn handle_input(window: &mut Window, ch: u8) {
                  info     | shows OS version\n\
                  install  | format ParvaFS\n\
                  list     | list files in root\n\
+                 neofetch | to flex that you use ParvaOS btw\n\
                  read     | read file\n\
                  reboot   | restart system\n\
                  shutdown | power off system\n\
