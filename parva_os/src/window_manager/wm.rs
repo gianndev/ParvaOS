@@ -452,8 +452,8 @@ fn handle_input(window: &mut Window, ch: u8) {
             }
 
             // Handle other commands
-            let response = if command == "hello" {
-                "Hello World!"
+            let response = if command == "info" {
+                "ParvaOS version 0.0.4"
             } else if command == "clear" {
                 // Reset terminal content to initial state
                 window.contents = vec![
@@ -480,13 +480,10 @@ fn handle_input(window: &mut Window, ch: u8) {
                 "ParvaFS formatted successfully"
             } else if command == "reboot" {
                 crate::reboot();
-            } else if command == "info" {
-                "ParvaOS version 0.0.4"
             } else if command == "help" {
                 "clear    | clear terminal\n\
                  crfile   | create file\n\
                  edit     | edit (overwrite) file\n\
-                 hello    | prints hello world\n\
                  help     | list of commands\n\
                  info     | shows OS version\n\
                  install  | format ParvaFS\n\
