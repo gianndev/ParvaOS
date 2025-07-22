@@ -452,8 +452,8 @@ fn handle_input(window: &mut Window, ch: u8) {
             }
 
             // Handle other commands
-            let response = if command == "info" {
-                "ParvaOS version 0.0.5"
+            let response = if command == "version" {
+                "ParvaOS version 0.1.0"
             } else if command == "clear" {
                 // Reset terminal content to initial state
                 window.contents = vec![
@@ -509,13 +509,13 @@ dMM      NM+-oooodMMN      hMd
                  crfile   | create file\n\
                  edit     | edit (overwrite) file\n\
                  help     | list of commands\n\
-                 info     | shows OS version\n\
                  install  | format ParvaFS\n\
                  list     | list files in root\n\
                  neofetch | to flex that you use ParvaOS btw\n\
                  read     | read file\n\
                  reboot   | restart system\n\
                  shutdown | power off system\n\
+                 version  | shows OS version\n\
                  [TAB]    | enter move mode (move with WASD)\n\
                  [SPACE]  | toggle fullscreen"
             } else if !command.is_empty() {
