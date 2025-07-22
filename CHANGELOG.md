@@ -1,6 +1,6 @@
 # Changelog
 
-## x.x.x (xxxx-xx-xx)
+## 0.0.5 (xxxx-xx-xx)
 - **Removed `hello` command**: the terminal window isn't very high so every space counts, so I removed this test command, even though it's a historical command.
 - **Added `neofetch` command**: a toy command to just flex that you use ParvaOS btw!
 

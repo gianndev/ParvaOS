@@ -453,7 +453,7 @@ fn handle_input(window: &mut Window, ch: u8) {
 
             // Handle other commands
             let response = if command == "info" {
-                "ParvaOS version 0.0.4"
+                "ParvaOS version 0.0.5"
             } else if command == "clear" {
                 // Reset terminal content to initial state
                 window.contents = vec![
