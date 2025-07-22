@@ -27,6 +27,7 @@ clean:
 	rm $(img)
 
 setup:
+	rustup default stable
+	cargo install bootimage
 	rustup install nightly
 	rustup default nightly
-	cargo install bootimage
